@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds show up as "JaWa Dev", next to the signed release "JaWa". -->
+<resources>
+    <string name="app_name">JaWa Dev</string>
+    <string name="widget_name">JaWa Dev</string>
+</resources>

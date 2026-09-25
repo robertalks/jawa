@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WidgetSmall">
+        <item name="android:textColor">@color/widget_text_dim</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:maxLines">1</item>
+    </style>
+    <style name="WidgetValue">
+        <item name="android:textColor">@color/widget_text</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:maxLines">1</item>
+    </style>
+    <style name="DetailCardTitle">
+        <item name="android:textColor">#A6FFFFFF</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+    <style name="DetailChipLabel">
+        <item name="android:textColor">#D9FFFFFF</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+    <style name="DetailChipValue">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:maxLines">1</item>
+    </style>
+    <style name="WidgetArrow">
+        <item name="android:layout_width">34dp</item>
+        <item name="android:layout_height">28dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/widget_arrow_bg</item>
+        <item name="android:textColor">@color/widget_text</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+    <style name="SettingsSection">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">22dp</item>
+        <item name="android:layout_marginBottom">8dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:textColor">?android:attr/textColorSecondary</item>
+    </style>
+</resources>

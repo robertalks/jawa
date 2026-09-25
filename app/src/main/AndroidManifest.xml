@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Coarse (town-level) location is enough for a forecast -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Lets the widget follow you while the app is closed -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/AppTheme">
+
+        <!-- Opens from the app icon and when the widget is tapped -->
+        <activity
+            android:name=".DetailActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/DetailTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Settings: location permission, battery optimisation, manual refresh -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:label="Settings" />
+
+        <receiver
+            android:name=".WeatherWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/weather_widget_info" />
+        </receiver>
+        <!-- Fires refreshes for the 10-minute interval -->
+        <receiver
+            android:name=".RefreshAlarmReceiver"
+            android:exported="false" />
+    </application>
+</manifest>

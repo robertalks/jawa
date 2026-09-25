@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">#3D6FB6</item>
+        <item name="android:windowBackground">@color/settings_bg</item>
+    </style>
+    <!-- The detail screen is always dark, like the widget -->
+    <style name="DetailTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@drawable/detail_bg</item>
+        <item name="android:statusBarColor">#1D2A44</item>
+        <item name="android:navigationBarColor">#0F1218</item>
+        <item name="android:colorAccent">#7CA8E8</item>
+    </style>
+</resources>

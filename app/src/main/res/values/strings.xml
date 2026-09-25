@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">JaWa</string>
+    <string name="app_full_name">Just Another Weather App</string>
+    <string name="widget_name">JaWa</string>
+    <string name="widget_description">Just Another Weather App: current weather and the next days for where you are and your saved places. Tap for the 14-day forecast.</string>
+</resources>
