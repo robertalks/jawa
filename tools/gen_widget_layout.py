@@ -74,12 +74,13 @@ xml = f'''<?xml version="1.0" encoding="utf-8"?>
             android:autoSizeMinTextSize="40sp"
             android:autoSizeStepGranularity="2sp"
             android:autoSizeTextType="uniform"
-            android:fontFamily="sans-serif-light"
+            android:fontFamily="sans-serif"
             android:gravity="start|center_vertical"
             android:includeFontPadding="false"
             android:maxLines="1"
             android:text="--°"
-            android:textColor="@color/widget_text" />
+            android:textColor="@color/widget_text"
+            android:textStyle="bold" />
 
         <!-- Right: weather icon above place, description, today's high / low -->
         <LinearLayout
