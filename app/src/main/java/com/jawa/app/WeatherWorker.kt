@@ -3,6 +3,7 @@ package com.jawa.app
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
+import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
@@ -20,6 +21,7 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val ctx = applicationContext
+        Store.migrate(ctx)
         try {
             // Everything to fetch, keyed like the cache: "cur" for current location, else place id.
             val keys = ArrayList<String>()
@@ -27,7 +29,11 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
 
             var current: Pair<Double, Double>? = null
             if (Places.useCurrent(ctx)) {
-                val loc = LocationHelper.currentLocation(ctx)
+                val interactive = inputData.getBoolean(KEY_INTERACTIVE, false)
+                val loc = LocationHelper.currentLocation(
+                    ctx,
+                    if (interactive) LocationHelper.MAX_AGE_INTERACTIVE_MS else LocationHelper.MAX_AGE_BACKGROUND_MS,
+                )
                 current = if (loc != null) loc.latitude to loc.longitude else Store.lastLatLon(ctx)
                 current?.let { keys += Places.CURRENT_KEY; points += it }
             }
@@ -54,7 +60,7 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
             if (runAttemptCount < 2) Result.retry() else Result.success()
         } finally {
             Store.setUpdating(ctx, false)
-            WeatherWidgetProvider.updateAll(ctx)
+            WidgetUpdates.all(ctx)
             armShortInterval(ctx) // next refresh for the 10-minute interval
         }
     }
@@ -78,6 +84,7 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
         private const val PERIODIC = "weather-periodic"
         private const val NOW = "weather-now"
         private const val AUTO = "weather-auto"
+        private const val KEY_INTERACTIVE = "interactive"
 
         /** Choices offered in Settings, in minutes. */
         val INTERVALS = listOf(10, 15, 30, 60, 90)
@@ -117,10 +124,12 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
             }
         }
 
+        /** You asked for it (tap, app opened, Refresh): gets a fresher location. */
         fun refreshNow(ctx: Context) {
             Store.setUpdating(ctx, true)
             val req = OneTimeWorkRequestBuilder<WeatherWorker>()
                 .setConstraints(network)
+                .setInputData(Data.Builder().putBoolean(KEY_INTERACTIVE, true).build())
                 .build()
             WorkManager.getInstance(ctx).enqueueUniqueWork(NOW, ExistingWorkPolicy.REPLACE, req)
         }

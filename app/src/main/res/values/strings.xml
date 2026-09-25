@@ -4,4 +4,8 @@
     <string name="app_full_name">Just Another Weather App</string>
     <string name="widget_name">JaWa</string>
     <string name="widget_description">Just Another Weather App: current weather and the next days for where you are and your saved places. Tap for the 14-day forecast.</string>
+    <string name="widget_small_name">JaWa small</string>
+    <string name="widget_small_description">Weather icon, temperature and place (2×1). Tap for the full forecast.</string>
+    <string name="widget_mini_name">JaWa mini</string>
+    <string name="widget_mini_description">Temperature and place (1×1). Tap for the full forecast.</string>
 </resources>

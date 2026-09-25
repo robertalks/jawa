@@ -16,8 +16,17 @@ import kotlin.coroutines.resume
 
 /** Town-level location using Android's own LocationManager (no Google Play services needed). */
 object LocationHelper {
-    private const val FRESH_ENOUGH_MS = 15 * 60 * 1000L
-    private const val TIMEOUT_MS = 30_000L
+    /** When you're using the app, a location up to this old is good enough. */
+    const val MAX_AGE_INTERACTIVE_MS = 10 * 60 * 1000L
+
+    /**
+     * For background refreshes a town-level forecast doesn't need a new fix every time:
+     * reuse any location up to an hour old (often one another app already obtained).
+     * This is what saves most battery, since a new fix wakes the phone's radios.
+     */
+    const val MAX_AGE_BACKGROUND_MS = 60 * 60 * 1000L
+
+    private const val TIMEOUT_MS = 20_000L
 
     fun hasLocation(ctx: Context): Boolean =
         granted(ctx, Manifest.permission.ACCESS_COARSE_LOCATION) ||
@@ -29,9 +38,9 @@ object LocationHelper {
     private fun granted(ctx: Context, p: String) =
         ctx.checkSelfPermission(p) == PackageManager.PERMISSION_GRANTED
 
-    /** A recent location, or null if none can be obtained right now. */
+    /** A location no older than [maxAgeMs] if possible, else the best we can get, or null. */
     @SuppressLint("MissingPermission")
-    suspend fun currentLocation(ctx: Context): Location? {
+    suspend fun currentLocation(ctx: Context, maxAgeMs: Long): Location? {
         if (!hasLocation(ctx)) return null
         val lm = ctx.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val providers = lm.getProviders(true)
@@ -39,7 +48,7 @@ object LocationHelper {
         val last = providers
             .mapNotNull { runCatching { lm.getLastKnownLocation(it) }.getOrNull() }
             .maxByOrNull { it.time }
-        if (last != null && System.currentTimeMillis() - last.time < FRESH_ENOUGH_MS) return last
+        if (last != null && System.currentTimeMillis() - last.time < maxAgeMs) return last
 
         val provider = when {
             Build.VERSION.SDK_INT >= 31 && LocationManager.FUSED_PROVIDER in providers -> LocationManager.FUSED_PROVIDER

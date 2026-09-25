@@ -16,7 +16,7 @@ class WeatherWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onDisabled(ctx: Context) {
-        WeatherWorker.cancelAll(ctx)
+        if (WidgetUpdates.count(ctx) == 0) WeatherWorker.cancelAll(ctx) // no JaWa widgets left
     }
 
     override fun onDeleted(ctx: Context, ids: IntArray) {
@@ -47,7 +47,7 @@ class WeatherWidgetProvider : AppWidgetProvider() {
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
                 WeatherWorker.schedulePeriodic(ctx)
                 WeatherWorker.refreshNow(ctx) // the cache format may have changed
-                updateAll(ctx)
+                WidgetUpdates.all(ctx)
             }
         }
     }
@@ -62,7 +62,7 @@ class WeatherWidgetProvider : AppWidgetProvider() {
         render(ctx, AppWidgetManager.getInstance(ctx), id)
         // Data older than 30 minutes (or missing)? Fetch fresh for all places.
         val age = System.currentTimeMillis() - Store.snapshot(ctx).updatedMillis
-        if (age > 30 * 60 * 1000L || Store.forecastJson(ctx, next.key) == null) WeatherWorker.refreshNow(ctx)
+        if (age > 30 * 60 * 1000L || !Store.hasForecast(ctx, next.key)) WeatherWorker.refreshNow(ctx)
     }
 
     companion object {

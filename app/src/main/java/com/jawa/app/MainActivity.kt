@@ -161,7 +161,7 @@ class MainActivity : Activity() {
     private fun placesChanged(refetch: Boolean) {
         renderCount()
         if (refetch) WeatherWorker.refreshNow(this)
-        WeatherWidgetProvider.updateAll(this)
+        WidgetUpdates.all(this)
     }
 
     // --- refresh interval ---
@@ -302,7 +302,7 @@ class MainActivity : Activity() {
 
     private fun refresh() {
         WeatherWorker.refreshNow(this)
-        WeatherWidgetProvider.updateAll(this)
+        WidgetUpdates.all(this)
     }
 
     private fun openAppSettings() {

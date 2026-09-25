@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget-list preview. Mini widget (1×1): temperature and place. Tap opens the full view. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:tag="widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="8dp">
+    <TextView
+            android:tag="temp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:autoSizeMaxTextSize="48sp"
+            android:autoSizeMinTextSize="16sp"
+            android:autoSizeStepGranularity="1sp"
+            android:autoSizeTextType="uniform"
+            android:fontFamily="sans-serif-light"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="11°"
+            android:textColor="@color/widget_text"
+            android:gravity="center" />
+    <TextView
+            android:tag="place"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Praha"
+            android:textColor="@color/widget_text"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+</LinearLayout>

@@ -66,7 +66,7 @@ class DetailActivity : Activity() {
 
         selectedKey = savedInstanceState?.getString(STATE_PLACE) ?: intent.getStringExtra(EXTRA_PLACE)
         WeatherWorker.schedulePeriodic(this)
-        val nothingYet = Places.all(this).none { Store.forecastJson(this, it.key) != null }
+        val nothingYet = Places.all(this).none { Store.hasForecast(this, it.key) }
         if (!LocationHelper.hasLocation(this) && Places.saved(this).isEmpty() && nothingYet) {
             // First run: location permission and places live in settings.
             openSettings()
@@ -92,7 +92,7 @@ class DetailActivity : Activity() {
         super.onResume()
         Store.prefs(this).registerOnSharedPreferenceChangeListener(prefsListener)
         render()
-        WeatherWidgetProvider.updateAll(this) // keeps the widget in step with the app
+        WidgetUpdates.all(this) // keeps the widget in step with the app
     }
 
     override fun onPause() {
@@ -124,7 +124,7 @@ class DetailActivity : Activity() {
 
     private fun refresh() {
         WeatherWorker.refreshNow(this)
-        WeatherWidgetProvider.updateAll(this)
+        WidgetUpdates.all(this)
     }
 
     private fun step(delta: Int) {

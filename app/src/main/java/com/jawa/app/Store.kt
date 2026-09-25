@@ -2,6 +2,7 @@ package com.jawa.app
 
 import android.content.Context
 import android.content.SharedPreferences
+import java.io.File
 
 /**
  * Small on-device cache: the last forecast for each place, the current-location
@@ -16,7 +17,6 @@ object Store {
     private const val KEY_ERROR = "error"
     private const val KEY_UPDATING = "updating"
     private const val KEY_REFRESH_MIN = "refresh_minutes"
-    private const val PREFIX_JSON = "json_"
     private const val PREFIX_WIDGET = "widget_place_"
 
     data class Snapshot(
@@ -37,22 +37,59 @@ object Store {
         )
     }
 
-    // --- forecasts, one per place key ---
+    // --- forecasts, one file per place key ---
+    //
+    // Kept out of SharedPreferences on purpose: that file is loaded whole into memory
+    // and rewritten whole on every small change (like the "updating" flag), which would
+    // mean rewriting ~30 KB per place each time. Separate files are only written when a
+    // new forecast arrives.
 
-    fun forecastJson(ctx: Context, key: String): String? = prefs(ctx).getString(PREFIX_JSON + key, null)
+    private fun forecastDir(ctx: Context): File = File(ctx.filesDir, "forecasts").apply { mkdirs() }
 
-    fun forecast(ctx: Context, key: String): Forecast? =
-        forecastJson(ctx, key)?.let { runCatching { Forecast.parse(it) }.getOrNull() }
+    private fun forecastFile(ctx: Context, key: String): File =
+        File(forecastDir(ctx), key.replace(Regex("[^A-Za-z0-9_-]"), "_") + ".json")
+
+    fun hasForecast(ctx: Context, key: String): Boolean = forecastFile(ctx, key).exists()
+
+    /** Parsed forecasts, reused until the file changes (a widget update reads them several times). */
+    private val cache = HashMap<String, Pair<Long, Forecast>>()
+
+    fun forecast(ctx: Context, key: String): Forecast? {
+        val f = forecastFile(ctx, key)
+        if (!f.exists()) return null
+        val stamp = f.lastModified()
+        synchronized(cache) { cache[key]?.let { if (it.first == stamp) return it.second } }
+        val parsed = runCatching { Forecast.parse(f.readText()) }.getOrNull() ?: return null
+        synchronized(cache) { cache[key] = stamp to parsed }
+        return parsed
+    }
 
     /** Saves all fetched forecasts at once and marks the update as done. */
     fun saveForecasts(ctx: Context, byKey: Map<String, String>) {
-        val e = prefs(ctx).edit()
-        byKey.forEach { (k, json) -> e.putString(PREFIX_JSON + k, json) }
-        e.putLong(KEY_UPDATED, System.currentTimeMillis()).remove(KEY_ERROR).apply()
+        byKey.forEach { (k, json) ->
+            val target = forecastFile(ctx, k)
+            val tmp = File(target.path + ".tmp")
+            tmp.writeText(json)
+            if (!tmp.renameTo(target)) { target.delete(); tmp.renameTo(target) }
+        }
+        synchronized(cache) { byKey.keys.forEach { cache.remove(it) } }
+        // Written last: screens listening for changes redraw once the files are in place.
+        prefs(ctx).edit().putLong(KEY_UPDATED, System.currentTimeMillis()).remove(KEY_ERROR).apply()
     }
 
     fun deleteForecast(ctx: Context, key: String) {
-        prefs(ctx).edit().remove(PREFIX_JSON + key).apply()
+        forecastFile(ctx, key).delete()
+        synchronized(cache) { cache.remove(key) }
+    }
+
+    /** One-time cleanup: older versions kept forecasts inside SharedPreferences. */
+    fun migrate(ctx: Context) {
+        val p = prefs(ctx)
+        val old = p.all.keys.filter { it == "json" || it.startsWith("json_") }
+        if (old.isEmpty()) return
+        val e = p.edit()
+        old.forEach { e.remove(it) }
+        e.apply()
     }
 
     // --- current location ---
