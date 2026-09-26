@@ -38,34 +38,61 @@ def group(shapes, tx=0, ty=0, s=1):
     return ("group", tx, ty, s, shapes)
 
 
+# ---------------------------------------------------------------- palette
+# "Extra pop" style: saturated colours and strong glows that read well on the
+# dark, see-through widget background.
+
+P = dict(
+    sun_glow=("#FFC400", "#FF7A00", "#FF3D00"), glow_r=2.6, glow_a=0.8,
+    ray=("#FFEA4D", "#FF6F00"),
+    core=("#FFFFF0", "#FFD000", "#FF7A00", "#E8430A"),
+    moon=("#FFF3B8", "#FFD04A", "#E09A12"), moon_glow="#8FAEFF", moon_glow_a=0.5,
+    crater="#B8862A", star_glow="#9FE3FF",
+    clouds={
+        "light": ("#FFFFFF", "#E3EEFF", "#8FB2EC"),
+        "back": ("#D2DFF7", "#93AEE0", "#6883BD"),
+        "dark": ("#A7A2EC", "#6B61C4", "#3B2F86"),
+    },
+    cloud_shadow="#10204A", cloud_shadow_a=0.26,
+    drop=("#7CF3FF", "#1F8CFF", "#0E3FD6"),
+    flake="#B0E4FF", flake_glow="#5CC8FF",
+    bolt=("#FFFFD6", "#FFE000", "#FF5E00"), bolt_glow="#FF9800", bolt_glow_a=0.75,
+    fog=("#B9C6E6", "#EEF3FF"),
+)
+
 # ---------------------------------------------------------------- elements
 
 def sun(cx=32, cy=32, r=11.5):
-    out = [fill(rad(cx, cy, r * 2.3, [(0, "#FFD54A", 0.45), (0.45, "#FFB300", 0.18), (1, "#FF9800", 0)]),
-                circle(cx, cy, r * 2.3))]
+    g = P["sun_glow"]
+    out = [fill(rad(cx, cy, r * P["glow_r"], [(0, g[0], P["glow_a"]), (0.4, g[1], P["glow_a"] * 0.45), (1, g[2], 0)]),
+                circle(cx, cy, r * P["glow_r"]))]
     rays = ""
     for k in range(8):
         a = k * math.pi / 4
-        tip = (cx + math.cos(a) * r * 2.05, cy + math.sin(a) * r * 2.05)
-        b1 = (cx + math.cos(a + 0.2) * r * 1.3, cy + math.sin(a + 0.2) * r * 1.3)
-        b2 = (cx + math.cos(a - 0.2) * r * 1.3, cy + math.sin(a - 0.2) * r * 1.3)
+        length = r * (2.15 if k % 2 == 0 else 1.9)  # long and short rays
+        tip = (cx + math.cos(a) * length, cy + math.sin(a) * length)
+        b1 = (cx + math.cos(a + 0.22) * r * 1.28, cy + math.sin(a + 0.22) * r * 1.28)
+        b2 = (cx + math.cos(a - 0.22) * r * 1.28, cy + math.sin(a - 0.22) * r * 1.28)
         rays += f"M{b1[0]:.2f},{b1[1]:.2f} L{tip[0]:.2f},{tip[1]:.2f} L{b2[0]:.2f},{b2[1]:.2f} Z "
-    out.append(fill(rad(cx, cy, r * 2.1, [(0.55, "#FFE082", 1), (1, "#FFB300", 1)]), rays.strip()))
-    out.append(fill(rad(cx - r * 0.35, cy - r * 0.4, r * 1.5,
-                        [(0, "#FFFBE0", 1), (0.35, "#FFD54A", 1), (1, "#FF9A1F", 1)]), circle(cx, cy, r)))
-    out.append(fill("#FFFFFF", circle(cx - r * 0.35, cy - r * 0.4, r * 0.32), 0.55))
+    out.append(fill(rad(cx, cy, r * 2.15, [(0.5, P["ray"][0], 1), (1, P["ray"][1], 1)]), rays.strip()))
+    c = P["core"]
+    out.append(fill(rad(cx - r * 0.35, cy - r * 0.4, r * 1.6, [(0, c[0], 1), (0.3, c[1], 1), (0.8, c[2], 1), (1, c[3], 1)]),
+                    circle(cx, cy, r)))
+    out.append(fill("#FFFFFF", circle(cx - r * 0.38, cy - r * 0.42, r * 0.3), 0.75))
     return out
 
 
 def moon():
-    out = [fill(rad(36, 32, 26, [(0, "#FFF6D0", 0.28), (1, "#BFD4FF", 0)]), circle(36, 32, 26)),
-           fill(lin(20, 12, 50, 52, [(0, "#FFFCEB", 1), (0.6, "#F3E3A2", 1), (1, "#D9C36E", 1)]),
+    m = P["moon"]
+    out = [fill(rad(36, 32, 28, [(0, P["moon_glow"], P["moon_glow_a"]), (1, P["moon_glow"], 0)]), circle(36, 32, 28)),
+           fill(lin(20, 12, 50, 52, [(0, m[0], 1), (0.55, m[1], 1), (1, m[2], 1)]),
                 "M40,10 A22,22 0 1,0 54,44 A20,20 0 0,1 40,10 Z")]
-    for x, y, r, o in [(26, 26, 3, 0.18), (22, 38, 2.2, 0.15), (31, 45, 2.6, 0.14)]:
-        out.append(fill("#B9A24E", circle(x, y, r), o))
+    for x, y, r, o in [(26, 26, 3, 0.2), (22, 38, 2.2, 0.17), (31, 45, 2.6, 0.16)]:
+        out.append(fill(P["crater"], circle(x, y, r), o))
+    out.append(fill("#FFFFFF", "M30,14 A18,18 0 0,0 17,30 A20,20 0 0,1 30,14 Z", 0.5))  # rim light
     for x, y, r in [(56, 15, 1.9), (49, 24, 1.3), (58, 30, 1.0)]:
-        out.append(fill(rad(x, y, r * 2.2, [(0, "#FFFFFF", 0.5), (1, "#FFFFFF", 0)]), circle(x, y, r * 2.2)))
-        out.append(fill("#FFFFFF", circle(x, y, r), 0.95))
+        out.append(fill(rad(x, y, r * 2.6, [(0, P["star_glow"], 0.7), (1, P["star_glow"], 0)]), circle(x, y, r * 2.6)))
+        out.append(fill("#FFFFFF", circle(x, y, r)))
     return out
 
 
@@ -73,49 +100,51 @@ CLOUD = [circle(20, 38, 10), circle(32, 28, 13), circle(45, 38, 10), "M20,34 H45
 
 
 def cloud(kind="light"):
-    top, mid, bot = {
-        "light": ("#FFFFFF", "#EEF2F8", "#C9D3E1"),
-        "back": ("#E4E9F1", "#C4CEDB", "#A3AFBF"),
-        "dark": ("#C9D2DE", "#9AA6B6", "#6E7A8C"),
-    }[kind]
-    shadow = group([fill("#0A1020", p, 0.10) for p in CLOUD], 0, 2.2, 1)
-    body = [fill(lin(0, 15, 0, 48, [(0, top, 1), (0.55, mid, 1), (1, bot, 1)]), p) for p in CLOUD]
-    shine = fill(rad(28, 22, 6, [(0, "#FFFFFF", 0.45 if kind == "dark" else 0.9), (1, "#FFFFFF", 0)]),
-                 circle(28, 22, 6))
+    top, mid, bot = P["clouds"][kind]
+    shadow = group([fill(P["cloud_shadow"], p, P["cloud_shadow_a"]) for p in CLOUD], 0, 2.4, 1)
+    body = [fill(lin(0, 15, 0, 48, [(0, top, 1), (0.5, mid, 1), (1, bot, 1)]), p) for p in CLOUD]
+    shine = fill(rad(27, 21, 7, [(0, "#FFFFFF", 0.55 if kind == "dark" else 0.95), (1, "#FFFFFF", 0)]),
+                 circle(27, 21, 7))
     return [shadow] + body + [shine]
 
 
 def drops(points, big=True):
-    s = 1.0 if big else 0.7
-    g = lin(0, 40, 0, 64, [(0, "#9ADBFF", 1), (1, "#2E86E6", 1)])
+    s = 1.0 if big else 0.72
+    d0, d1, d2 = P["drop"]
+    g = lin(0, 40, 0, 64, [(0, d0, 1), (0.5, d1, 1), (1, d2, 1)])
     out = []
     for x, y in points:
-        d = (f"M{x:g},{y:g} C{x + 3.2 * s:g},{y + 5 * s:g} {x + 3.4 * s:g},{y + 7.5 * s:g} {x:g},{y + 8.5 * s:g} "
-             f"C{x - 3.4 * s:g},{y + 7.5 * s:g} {x - 3.2 * s:g},{y + 5 * s:g} {x:g},{y:g} Z")
+        d = (f"M{x:g},{y:g} C{x + 3.4 * s:g},{y + 5 * s:g} {x + 3.6 * s:g},{y + 7.7 * s:g} {x:g},{y + 8.8 * s:g} "
+             f"C{x - 3.6 * s:g},{y + 7.7 * s:g} {x - 3.4 * s:g},{y + 5 * s:g} {x:g},{y:g} Z")
         out.append(fill(g, d))
-        out.append(fill("#FFFFFF", circle(x - 0.9 * s, y + 5.6 * s, 0.8 * s), 0.7))
+        out.append(fill("#FFFFFF", circle(x - 1 * s, y + 5.6 * s, 0.9 * s), 0.85))
     return out
 
 
 def flakes(points):
+    out = [fill(rad(x, y, 5.5, [(0, P["flake_glow"], 0.55), (1, P["flake_glow"], 0)]), circle(x, y, 5.5))
+           for x, y in points]
     d = ""
     for x, y in points:
-        for dx, dy in [(3.4, 0), (1.7, 2.95), (1.7, -2.95)]:
+        for dx, dy in [(3.5, 0), (1.75, 3.03), (1.75, -3.03)]:
             d += f"M{x - dx:g},{y - dy:g} L{x + dx:g},{y + dy:g} "
-    out = [("stroke", "#E8F4FF", 1.9, d.strip())]
-    out += [fill("#FFFFFF", circle(x, y, 1.2)) for x, y in points]
+    out.append(("stroke", P["flake"], 2.0, d.strip()))
+    out += [fill("#FFFFFF", circle(x, y, 1.3)) for x, y in points]
     return out
 
 
 def bolt():
-    return [fill(rad(32, 49, 13, [(0, "#FFE066", 0.35), (1, "#FFB300", 0)]), circle(32, 49, 13)),
-            fill(lin(28, 33, 36, 63, [(0, "#FFF3A6", 1), (0.5, "#FFD23F", 1), (1, "#FF9F1C", 1)]),
-                 "M34,33 L23,50 H31 L27,63 L41,45 H33 L38,33 Z")]
+    b = P["bolt"]
+    return [fill(rad(32, 49, 15, [(0, P["bolt_glow"], P["bolt_glow_a"]), (1, P["bolt_glow"], 0)]), circle(32, 49, 15)),
+            fill(lin(28, 33, 36, 63, [(0, b[0], 1), (0.45, b[1], 1), (1, b[2], 1)]),
+                 "M34,33 L23,50 H31 L27,63 L41,45 H33 L38,33 Z"),
+            fill("#FFFFFF", "M34.5,35 L27,47 H29.5 L35.5,37 Z", 0.6)]  # highlight
 
 
 def fog():
-    g = lin(8, 0, 56, 0, [(0, "#C9D3E1", 0.2), (0.5, "#E6ECF4", 1), (1, "#C9D3E1", 0.2)])
-    return [fill(g, f"M{x1},{y - 1.8:g} H{x2} a1.8,1.8 0 0,1 0,3.6 H{x1} a1.8,1.8 0 0,1 0,-3.6 Z")
+    f0, f1 = P["fog"]
+    g = lin(8, 0, 56, 0, [(0, f0, 0.25), (0.5, f1, 1), (1, f0, 0.25)])
+    return [fill(g, f"M{x1},{y - 1.9:g} H{x2} a1.9,1.9 0 0,1 0,3.8 H{x1} a1.9,1.9 0 0,1 0,-3.8 Z")
             for x1, x2, y in [(10, 42, 46), (20, 54, 53), (12, 46, 60)]]
 
 
