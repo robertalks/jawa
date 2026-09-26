@@ -36,12 +36,18 @@ data class Forecast(
             val root = JSONObject(json)
 
             val c = root.getJSONObject("current")
+            val currentIsDay = c.optInt("is_day", 1) == 1
             val current = Current(
                 time = c.getString("time"),
                 temp = c.getDouble("temperature_2m"),
                 feelsLike = c.optDouble("apparent_temperature", c.getDouble("temperature_2m")),
-                code = c.getInt("weather_code"),
-                isDay = c.optInt("is_day", 1) == 1,
+                // Sunny vs cloudy judged from cloud layers, see Sky
+                code = Sky.hour(
+                    c.getInt("weather_code"),
+                    c.numOrNull("cloud_cover_low"), c.numOrNull("cloud_cover_mid"), c.numOrNull("cloud_cover_high"),
+                    currentIsDay,
+                ),
+                isDay = currentIsDay,
                 windKmh = c.optDouble("wind_speed_10m", 0.0),
             )
 
@@ -53,11 +59,19 @@ data class Forecast(
             for (i in 0 until hTime.length()) {
                 val t = hTime.getString(i)
                 if (t <= current.time) continue
+                val isDay = h.getJSONArray("is_day").optInt(i, 1) == 1
                 hours += Hour(
                     time = t,
                     temp = h.getJSONArray("temperature_2m").getDouble(i),
-                    code = h.getJSONArray("weather_code").getInt(i),
-                    isDay = h.getJSONArray("is_day").optInt(i, 1) == 1,
+                    code = Sky.hour(
+                        h.getJSONArray("weather_code").getInt(i),
+                        h.optJSONArray("cloud_cover_low").numOrNull(i),
+                        h.optJSONArray("cloud_cover_mid").numOrNull(i),
+                        h.optJSONArray("cloud_cover_high").numOrNull(i),
+                        isDay,
+                        h.optJSONArray("sunshine_duration").numOrNull(i),
+                    ),
+                    isDay = isDay,
                     rainChance = h.optJSONArray("precipitation_probability").intAt(i),
                 )
             }
@@ -65,13 +79,22 @@ data class Forecast(
             val d = root.getJSONObject("daily")
             val dTime = d.getJSONArray("time")
             val days = (0 until dTime.length()).map { i ->
+                val rainChance = d.optJSONArray("precipitation_probability_max").intAt(i)
+                val rainMm = d.optJSONArray("precipitation_sum").doubleAt(i)
                 Day(
                     date = dTime.getString(i),
-                    code = d.getJSONArray("weather_code").getInt(i),
+                    // The raw daily code is the day's worst hour; judge the day as a whole instead.
+                    code = Sky.day(
+                        d.getJSONArray("weather_code").getInt(i),
+                        d.optJSONArray("sunshine_duration").numOrNull(i),
+                        d.optJSONArray("daylight_duration").numOrNull(i),
+                        rainMm,
+                        rainChance,
+                    ),
                     max = d.getJSONArray("temperature_2m_max").getDouble(i),
                     min = d.getJSONArray("temperature_2m_min").getDouble(i),
-                    rainChance = d.optJSONArray("precipitation_probability_max").intAt(i),
-                    rainMm = d.optJSONArray("precipitation_sum").doubleAt(i),
+                    rainChance = rainChance,
+                    rainMm = rainMm,
                     sunrise = d.optJSONArray("sunrise").timeAt(i),
                     sunset = d.optJSONArray("sunset").timeAt(i),
                 )
@@ -81,6 +104,13 @@ data class Forecast(
 
         private fun JSONArray?.intAt(i: Int): Int =
             if (this == null || isNull(i)) 0 else optInt(i, 0)
+
+        /** A number, or null if missing (e.g. data saved by an older version). */
+        private fun JSONArray?.numOrNull(i: Int): Double? =
+            if (this == null || i >= length() || isNull(i)) null else optDouble(i).takeIf { !it.isNaN() }
+
+        private fun JSONObject.numOrNull(key: String): Double? =
+            if (!has(key) || isNull(key)) null else optDouble(key).takeIf { !it.isNaN() }
 
         private fun JSONArray?.doubleAt(i: Int): Double =
             if (this == null || isNull(i)) 0.0 else optDouble(i, 0.0)

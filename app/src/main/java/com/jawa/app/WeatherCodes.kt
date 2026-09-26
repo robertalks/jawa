@@ -15,9 +15,9 @@ object WeatherCodes {
         else -> R.drawable.wx_cloudy
     }
 
-    fun text(code: Int): String = when (code) {
-        0 -> "Clear"
-        1 -> "Mostly clear"
+    fun text(code: Int, isDay: Boolean = true): String = when (code) {
+        0 -> if (isDay) "Sunny" else "Clear"
+        1 -> if (isDay) "Mostly sunny" else "Mostly clear"
         2 -> "Partly cloudy"
         3 -> "Overcast"
         45, 48 -> "Fog"

@@ -182,7 +182,7 @@ class DetailActivity : Activity() {
         val today = fc.days.firstOrNull()
         findViewById<ImageView>(R.id.cur_icon).setImageResource(WeatherCodes.icon(c.code, c.isDay))
         findViewById<TextView>(R.id.cur_temp).text = WidgetRenderer.deg(c.temp)
-        findViewById<TextView>(R.id.cur_desc).text = WeatherCodes.text(c.code)
+        findViewById<TextView>(R.id.cur_desc).text = WeatherCodes.text(c.code, c.isDay)
         findViewById<TextView>(R.id.cur_feels).text = "Feels ${WidgetRenderer.deg(c.feelsLike)}"
         findViewById<TextView>(R.id.cur_hl).text =
             if (today != null) "${WidgetRenderer.deg(today.max)} / ${WidgetRenderer.deg(today.min)}" else ""

@@ -23,10 +23,12 @@ object WeatherApi {
         val lats = points.joinToString(",") { String.format(Locale.US, "%.4f", it.first) }
         val lons = points.joinToString(",") { String.format(Locale.US, "%.4f", it.second) }
         val url = "https://api.open-meteo.com/v1/forecast?latitude=$lats&longitude=$lons" +
-            "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m" +
-            "&hourly=temperature_2m,weather_code,is_day" +
+            "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m," +
+            "cloud_cover_low,cloud_cover_mid,cloud_cover_high" +
+            "&hourly=temperature_2m,weather_code,is_day,cloud_cover_low,cloud_cover_mid,cloud_cover_high," +
+            "sunshine_duration" +
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +
-            "precipitation_sum,sunrise,sunset" +
+            "precipitation_sum,sunrise,sunset,sunshine_duration,daylight_duration" +
             "&timezone=auto&forecast_days=14&forecast_hours=48"
         val body = get(url).trim()
         // One place → a JSON object; several → a JSON array of objects.

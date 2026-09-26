@@ -109,7 +109,7 @@ object WidgetRenderer {
         v.setImageViewResource(R.id.current_icon, WeatherCodes.icon(c.code, c.isDay))
         v.setTextViewText(R.id.current_temp, deg(c.temp))
         v.setTextViewText(R.id.place, (placeLabel ?: "—") + marker)
-        v.setTextViewText(R.id.description, WeatherCodes.text(c.code))
+        v.setTextViewText(R.id.description, WeatherCodes.text(c.code, c.isDay))
         val today = fc.days.firstOrNull()
         v.setTextViewText(R.id.details, if (today != null) "${deg(today.max)} / ${deg(today.min)}" else "")
 
