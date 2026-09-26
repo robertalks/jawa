@@ -21,16 +21,45 @@
         android:minHeight="64dp"
         android:orientation="horizontal">
 
-        <ImageView
-            android:id="@+id/current_icon"
+        <FrameLayout
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:adjustViewBounds="true"
-            android:importantForAccessibility="no"
-            android:maxWidth="180dp"
-            android:maxHeight="180dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/wx_partly_day" />
+            android:layout_height="match_parent">
+            <ImageView
+                android:id="@+id/current_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical"
+                android:adjustViewBounds="true"
+                android:importantForAccessibility="no"
+                android:maxWidth="180dp"
+                android:maxHeight="180dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/wx_partly_day" />
+
+            <LinearLayout
+                android:id="@+id/moon_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <ImageView
+                    android:id="@+id/moon_icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/moon_08" />
+                <TextView
+                    android:id="@+id/moon_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:maxLines="1"
+                    android:text=""
+                    android:textColor="#FFE7A0"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </FrameLayout>
 
         <!-- Right: temperature above place, description, today's high / low -->
         <LinearLayout

@@ -21,11 +21,16 @@
         android:minHeight="64dp"
         android:orientation="horizontal">
 
-        <TextView
-            android:tag="current_temp"
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
+            android:layout_weight="1">
+
+        <TextView
+            android:tag="current_temp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="0"
             android:autoSizeMaxTextSize="160sp"
             android:autoSizeMinTextSize="40sp"
             android:autoSizeStepGranularity="2sp"
@@ -37,6 +42,31 @@
             android:text="14°"
             android:textColor="@color/widget_text"
             android:textStyle="bold" />
+
+            <LinearLayout
+                android:tag="moon_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <ImageView
+                    android:tag="moon_icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/moon_08" />
+                <TextView
+                    android:tag="moon_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:maxLines="1"
+                    android:text="Full moon"
+                    android:textColor="#FFE7A0"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </FrameLayout>
 
         <!-- Right: weather icon above place, description, today's high / low -->
         <LinearLayout

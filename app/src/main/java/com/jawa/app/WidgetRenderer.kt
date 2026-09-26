@@ -76,6 +76,11 @@ object WidgetRenderer {
         val v = RemoteViews(ctx.packageName, layout)
         v.setOnClickPendingIntent(R.id.widget_root, target.onTap)
 
+        // Tonight's moon, in the top-left corner (same everywhere, worked out from the date)
+        val moonAge = Moon.age(System.currentTimeMillis())
+        v.setImageViewResource(R.id.moon_icon, MoonIcons.forAge(moonAge))
+        v.setTextViewText(R.id.moon_text, Moon.name(moonAge))
+
         // ‹ › and dots only when there's more than one place
         val many = target.count > 1
         v.setViewVisibility(R.id.nav_row, if (many) View.VISIBLE else View.GONE)

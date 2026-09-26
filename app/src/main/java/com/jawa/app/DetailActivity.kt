@@ -21,6 +21,8 @@ import android.widget.TextView
 import android.widget.Toast
 import java.text.DateFormat
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
@@ -152,6 +154,7 @@ class DetailActivity : Activity() {
 
         renderPills(places, place)
         renderHomeAction(place)
+        renderMoonCard()
         findViewById<TextView>(R.id.detail_dots).apply {
             visibility = if (places.size > 1) View.VISIBLE else View.GONE
             text = WidgetRenderer.dots(places.size, index)
@@ -197,6 +200,19 @@ class DetailActivity : Activity() {
 
         renderHours(fc)
         renderDays(fc)
+    }
+
+    /** Tonight's moon: phase, how much is lit, and the next new or full moon. */
+    private fun renderMoonCard() {
+        val now = System.currentTimeMillis()
+        val age = Moon.age(now)
+        findViewById<ImageView>(R.id.moon_card_icon).setImageResource(MoonIcons.forAge(age))
+        findViewById<TextView>(R.id.moon_card_name).text = Moon.name(age)
+        findViewById<TextView>(R.id.moon_card_lit).text = "${(Moon.illumination(age) * 100).roundToInt()}% lit"
+        val (label, at) = Moon.nextMainPhase(now)
+        val whenText = Instant.ofEpochMilli(at).atZone(ZoneId.systemDefault())
+            .format(DateTimeFormatter.ofPattern("EEE d MMM, HH:mm", Locale.getDefault()))
+        findViewById<TextView>(R.id.moon_card_next).text = "Next ${label.lowercase(Locale.getDefault())}: $whenText"
     }
 
     /**
@@ -349,6 +365,16 @@ class DetailActivity : Activity() {
                 addView(text(date, 11f, 0.55f))
             })
 
+            // That evening's moon
+            addView(ImageView(context).apply {
+                val evening = runCatching {
+                    LocalDate.parse(d.date).atTime(21, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                }.getOrNull()
+                if (evening != null) setImageResource(MoonIcons.forAge(Moon.age(evening)))
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = LinearLayout.LayoutParams(dp(18), dp(18)).apply { marginEnd = dp(8) }
+            })
+
             addView(ImageView(context).apply {
                 setImageResource(WeatherCodes.icon(d.code, true))
                 layoutParams = LinearLayout.LayoutParams(dp(32), dp(32)).apply { marginEnd = dp(8) }
@@ -357,7 +383,7 @@ class DetailActivity : Activity() {
             // Rain chance + amount, only when rain is reasonably likely
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(dp(52), LinearLayout.LayoutParams.WRAP_CONTENT)
+                layoutParams = LinearLayout.LayoutParams(dp(46), LinearLayout.LayoutParams.WRAP_CONTENT)
                 if (d.rainChance >= 20) {
                     addView(text("${d.rainChance}%", 12f, color = RAIN))
                     if (d.rainMm > 0) addView(text(mm(d.rainMm), 10f, 0.8f, RAIN))

@@ -166,6 +166,35 @@ ICONS = {
 }
 
 
+# ---------------------------------------------------------------- moon phases
+# moon_00 … moon_15: new moon → waxing → full (08) → waning. Dark disc with the lit part
+# on top; lit on the right while waxing, on the left while waning (northern hemisphere).
+
+MOON_STEPS = 16
+
+
+def moon_phase(i):
+    cx = cy = 32
+    r = 26
+    frac = i / MOON_STEPS                      # 0 = new, 0.5 = full
+    k = math.cos(2 * math.pi * frac)            # 1 at new, -1 at full
+    rx = max(abs(k) * r, 0.01)
+    if frac <= 0.5:   # waxing: right half + terminator
+        lit = f"M{cx},{cy - r} A{r},{r} 0 0,1 {cx},{cy + r} A{rx:.2f},{r} 0 0,{0 if k > 0 else 1} {cx},{cy - r} Z"
+    else:             # waning: left half + terminator
+        lit = f"M{cx},{cy - r} A{r},{r} 0 0,0 {cx},{cy + r} A{rx:.2f},{r} 0 0,{1 if k > 0 else 0} {cx},{cy - r} Z"
+    m = P["moon"]
+    out = [fill("#3A4466", circle(cx, cy, r), 0.9)]           # the unlit disc
+    if i != 0:
+        out.append(fill(lin(12, 8, 52, 58, [(0, m[0], 1), (0.55, m[1], 1), (1, m[2], 1)]), lit))
+    for x, y, cr, o in [(24, 24, 3.4, 0.18), (40, 40, 4.5, 0.15), (38, 21, 2.3, 0.15), (22, 40, 2.6, 0.14)]:
+        out.append(fill(P["crater"], circle(x, y, cr), o))
+    return out
+
+
+MOONS = {f"moon_{i:02d}": moon_phase(i) for i in range(MOON_STEPS)}
+
+
 # ---------------------------------------------------------------- writers
 
 def argb(color, alpha):
@@ -258,7 +287,7 @@ def svg(shapes):
 if __name__ == "__main__":
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     draw = os.path.join(root, "app/src/main/res/drawable")
-    for name, shapes in ICONS.items():
+    for name, shapes in {**ICONS, **MOONS}.items():
         with open(os.path.join(draw, name + ".xml"), "w") as f:
             f.write(vector_xml(shapes))
     # Launcher icon foreground: partly-sunny icon centred in the 108dp adaptive canvas
@@ -266,7 +295,7 @@ if __name__ == "__main__":
         f.write(vector_xml([group(ICONS["wx_partly_day"], 22, 22, 1)], 108, 108))
     if len(sys.argv) > 1:  # optional: SVGs for previewing
         os.makedirs(sys.argv[1], exist_ok=True)
-        for name, shapes in ICONS.items():
+        for name, shapes in {**ICONS, **MOONS}.items():
             with open(os.path.join(sys.argv[1], name + ".svg"), "w") as f:
                 f.write(svg(shapes))
-    print("wrote", len(ICONS), "icons")
+    print("wrote", len(ICONS), "weather icons and", len(MOONS), "moon phases")
