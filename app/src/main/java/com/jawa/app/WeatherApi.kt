@@ -25,10 +25,9 @@ object WeatherApi {
         val url = "https://api.open-meteo.com/v1/forecast?latitude=$lats&longitude=$lons" +
             "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m," +
             "cloud_cover_low,cloud_cover_mid,cloud_cover_high" +
-            "&hourly=temperature_2m,weather_code,is_day,cloud_cover_low,cloud_cover_mid,cloud_cover_high," +
-            "sunshine_duration" +
+            "&hourly=temperature_2m,weather_code,is_day,cloud_cover_low,cloud_cover_mid,cloud_cover_high" +
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +
-            "precipitation_sum,sunrise,sunset,sunshine_duration,daylight_duration" +
+            "precipitation_sum,sunrise,sunset,sunshine_duration,daylight_duration,cloud_cover_mean" +
             "&timezone=auto&forecast_days=14&forecast_hours=48"
         val body = get(url).trim()
         // One place → a JSON object; several → a JSON array of objects.

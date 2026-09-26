@@ -9,9 +9,10 @@ package com.jawa.app
  *  - Codes 0–3 (clear … overcast) come from total cloud cover, which counts thin, high
  *    cirrus the sun shines through the same as thick low cloud.
  *
- * So: days are judged by how much of the daylight is sunny; hours and "now" by cloud cover
- * weighted by height (and sunshine, in daytime). Rain, snow, fog and thunder are kept, but
- * for a day only when they're meaningful. Plain Kotlin, no Android, so it can be tested.
+ * So: a day is judged by two signals that must agree, its share of sunny daylight and its
+ * average cloud cover (sunshine hours alone overstate the sun: hazy sun still counts).
+ * Hours and "now" use cloud cover weighted by height. Rain, snow, fog and thunder are kept,
+ * but for a day only when they're meaningful. Plain Kotlin, no Android, so it can be tested.
  */
 object Sky {
     const val CLEAR = 0
@@ -25,42 +26,57 @@ object Sky {
         val l = low.coerceIn(0.0, 100.0) / 100
         val m = mid.coerceIn(0.0, 100.0) / 100
         val h = high.coerceIn(0.0, 100.0) / 100
-        val clearSky = (1 - l) * (1 - 0.75 * m) * (1 - 0.35 * h) // layers overlap
+        val clearSky = (1 - l) * (1 - 0.85 * m) * (1 - 0.5 * h) // layers overlap
         return (1 - clearSky) * 100
     }
 
     fun fromCover(cover: Double): Int = when {
-        cover < 20 -> CLEAR
-        cover < 45 -> MOSTLY_CLEAR
-        cover < 75 -> PARTLY_CLOUDY
-        else -> OVERCAST
-    }
-
-    /** Share of daylight with sunshine (0–1) → sky code. */
-    fun fromSunshine(ratio: Double): Int = when {
-        ratio >= 0.75 -> CLEAR
-        ratio >= 0.5 -> MOSTLY_CLEAR
-        ratio >= 0.25 -> PARTLY_CLOUDY
+        cover < 15 -> CLEAR
+        cover < 40 -> MOSTLY_CLEAR
+        cover < 70 -> PARTLY_CLOUDY
         else -> OVERCAST
     }
 
     /**
-     * Now or one hour. Only codes 0–3 are re-judged; anything with rain, snow, fog or
-     * thunder is kept. [sunshineSeconds] is the sunshine in that hour (daytime only).
+     * A day's sky from its share of sunny daylight (0–1) and, when known, its average
+     * cloud cover (0–100). Both have to point the same way for a sunnier result.
      */
-    fun hour(code: Int, low: Double?, mid: Double?, high: Double?, isDay: Boolean, sunshineSeconds: Double? = null): Int {
+    fun daySky(ratio: Double, cloudMean: Double?): Int {
+        if (cloudMean == null) return when {   // older data: sunshine only, strict
+            ratio >= 0.85 -> CLEAR
+            ratio >= 0.65 -> MOSTLY_CLEAR
+            ratio >= 0.35 -> PARTLY_CLOUDY
+            else -> OVERCAST
+        }
+        return when {
+            ratio >= 0.8 && cloudMean < 35 -> CLEAR
+            ratio >= 0.6 && cloudMean < 60 -> MOSTLY_CLEAR
+            ratio >= 0.3 && cloudMean < 85 -> PARTLY_CLOUDY
+            else -> OVERCAST
+        }
+    }
+
+    /**
+     * Now or one hour. Only codes 0–3 are re-judged from the cloud layers; anything with
+     * rain, snow, fog or thunder is kept.
+     */
+    fun hour(code: Int, low: Double?, mid: Double?, high: Double?): Int {
         if (code !in CLEAR..OVERCAST || low == null || mid == null || high == null) return code
-        var sky = fromCover(effectiveCover(low, mid, high))
-        // Mostly sunny hour? Then it can't look more than "mostly clear".
-        if (isDay && sunshineSeconds != null && sunshineSeconds >= 0.6 * 3600) sky = minOf(sky, MOSTLY_CLEAR)
-        return sky
+        return fromCover(effectiveCover(low, mid, high))
     }
 
     /** A whole day, from its sunshine vs daylight and how much rain is expected. */
-    fun day(code: Int, sunshineSeconds: Double?, daylightSeconds: Double?, rainMm: Double, rainChance: Int): Int {
+    fun day(
+        code: Int,
+        sunshineSeconds: Double?,
+        daylightSeconds: Double?,
+        cloudMean: Double?,
+        rainMm: Double,
+        rainChance: Int,
+    ): Int {
         if (sunshineSeconds == null || daylightSeconds == null || daylightSeconds <= 0) return code
         val ratio = (sunshineSeconds / daylightSeconds).coerceIn(0.0, 1.0)
-        val sky = fromSunshine(ratio)
+        val sky = daySky(ratio, cloudMean)
         val wet = rainMm >= 1.0 || rainChance >= 50
         return when (code) {
             in CLEAR..OVERCAST -> sky
