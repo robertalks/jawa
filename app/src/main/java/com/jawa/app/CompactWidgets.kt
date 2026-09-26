@@ -83,7 +83,7 @@ class SmallWidgetProvider : CompactWidgetProvider(R.layout.widget_small, showIco
 
 class MiniWidgetProvider : CompactWidgetProvider(R.layout.widget_mini, showIcon = false)
 
-/** Redraws every JaWa widget, of all three kinds. */
+/** Redraws every JaWa widget, of all four kinds. */
 object WidgetUpdates {
     fun all(ctx: Context) {
         WeatherWidgetProvider.updateAll(ctx)
@@ -94,7 +94,7 @@ object WidgetUpdates {
     /** How many JaWa widgets are on the home screen(s). */
     fun count(ctx: Context): Int {
         val mgr = AppWidgetManager.getInstance(ctx)
-        return listOf(WeatherWidgetProvider::class.java, SmallWidgetProvider::class.java, MiniWidgetProvider::class.java)
+        return (WeatherWidgetProvider.PROVIDERS + listOf(SmallWidgetProvider::class.java, MiniWidgetProvider::class.java))
             .sumOf { mgr.getAppWidgetIds(ComponentName(ctx, it)).size }
     }
 }

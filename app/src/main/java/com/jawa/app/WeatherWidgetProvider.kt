@@ -8,7 +8,11 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 
-class WeatherWidgetProvider : AppWidgetProvider() {
+/**
+ * The big widgets. "JaWa" (this class) and "JaWa big icon" ([BigIconWidgetProvider])
+ * behave the same; they only use different layouts, picked per widget in [render].
+ */
+open class WeatherWidgetProvider : AppWidgetProvider() {
 
     override fun onEnabled(ctx: Context) {
         WeatherWorker.schedulePeriodic(ctx)
@@ -69,11 +73,23 @@ class WeatherWidgetProvider : AppWidgetProvider() {
         private const val ACTION_PREV = "com.jawa.app.PREV"
         private const val ACTION_NEXT = "com.jawa.app.NEXT"
 
+        /** Both kinds of big widget. */
+        val PROVIDERS = listOf(WeatherWidgetProvider::class.java, BigIconWidgetProvider::class.java)
+
         fun updateAll(ctx: Context) {
             val mgr = AppWidgetManager.getInstance(ctx)
-            val ids = mgr.getAppWidgetIds(ComponentName(ctx, WeatherWidgetProvider::class.java))
-            ids.forEach { render(ctx, mgr, it) }
+            PROVIDERS.forEach { cls ->
+                mgr.getAppWidgetIds(ComponentName(ctx, cls)).forEach { render(ctx, mgr, it) }
+            }
         }
+
+        /** Layout for a widget, from which of the two big widgets it is. */
+        private fun layoutFor(mgr: AppWidgetManager, id: Int): Int =
+            if (mgr.getAppWidgetInfo(id)?.provider?.className == BigIconWidgetProvider::class.java.name) {
+                R.layout.widget_weather_icon
+            } else {
+                R.layout.widget_weather
+            }
 
         /** The place a widget shows: its own choice if still valid, else the first place. */
         private fun selectedKey(ctx: Context, id: Int, places: List<PlaceRef>): String? =
@@ -91,7 +107,7 @@ class WeatherWidgetProvider : AppWidgetProvider() {
                 onPrev = stepIntent(ctx, id, ACTION_PREV),
                 onNext = stepIntent(ctx, id, ACTION_NEXT),
             )
-            mgr.updateAppWidget(id, WidgetRenderer.build(ctx, mgr.getAppWidgetOptions(id), target))
+            mgr.updateAppWidget(id, WidgetRenderer.build(ctx, mgr.getAppWidgetOptions(id), target, layoutFor(mgr, id)))
         }
 
         /** Tapping the widget opens the full view on the same place, and refreshes. */
@@ -117,3 +133,6 @@ class WeatherWidgetProvider : AppWidgetProvider() {
         }
     }
 }
+
+/** "JaWa big icon": same widget, with the big weather icon on the left. */
+class BigIconWidgetProvider : WeatherWidgetProvider()

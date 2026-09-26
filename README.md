@@ -6,6 +6,8 @@ A small, ad-free Android weather app and home-screen widget for personal use.
 - Forecast from [Open-Meteo](https://open-meteo.com) (free, no API key)
 - Works at 4×2 and 5×2: big current temperature plus the next 4–5 days
 - Up to 10 saved places besides your current location; switch with ‹ › on the widget
+- Two big widgets with different layouts: **JaWa** (big temperature) and
+  **JaWa big icon** (big weather icon, temperature above the place)
 - Two small widgets too: **JaWa small** (2×1: icon, temperature, place) and
   **JaWa mini** (1×1: temperature, place)
 - Tap the widget to open the full view (next 24 hours, 14-day forecast) for that place;
@@ -73,7 +75,7 @@ version (8.13) the first time. Build with JDK 21 (Android Studio's built-in JBR 
 - `CompactWidgets.kt` — the small (2×1) and mini (1×1) widgets
 - `tools/gen_icons.py` — generates the weather icons in `res/drawable/wx_*.xml`
   (gradients; `python3 tools/gen_icons.py preview/` also writes SVG previews)
-- `tools/gen_widget_layout.py` — generates `res/layout/widget_weather.xml`
+- `tools/gen_widget_layout.py` — generates both big widget layouts and their previews
 
 `app/debug.keystore` is only for debug builds; your release key never goes in the repo.
 

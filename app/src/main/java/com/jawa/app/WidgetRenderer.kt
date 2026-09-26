@@ -48,20 +48,20 @@ object WidgetRenderer {
      * On Android 12+ we hand the launcher one layout per size and it picks the one
      * that fits, so nothing depends on guessing the size. Older Android: guess from options.
      */
-    fun build(ctx: Context, options: Bundle, target: Target): RemoteViews {
+    fun build(ctx: Context, options: Bundle, target: Target, layout: Int): RemoteViews {
         val snap = Store.snapshot(ctx)
         val fc = target.place?.let { Store.forecast(ctx, it.key) }
         if (Build.VERSION.SDK_INT >= 31) {
             val map = LinkedHashMap<SizeF, RemoteViews>()
             for (w in RESPONSIVE_WIDTHS) for (h in RESPONSIVE_HEIGHTS) {
-                map[SizeF(w.toFloat(), h.toFloat())] = buildFor(ctx, w, h, target, snap, fc)
+                map[SizeF(w.toFloat(), h.toFloat())] = buildFor(ctx, w, h, target, snap, fc, layout)
             }
             return RemoteViews(map)
         }
         // In portrait the launcher reports width as MIN_WIDTH and height as MAX_HEIGHT.
         val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
         val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-        return buildFor(ctx, widthDp, heightDp, target, snap, fc)
+        return buildFor(ctx, widthDp, heightDp, target, snap, fc, layout)
     }
 
     private fun buildFor(
@@ -71,8 +71,9 @@ object WidgetRenderer {
         target: Target,
         snap: Store.Snapshot,
         fc: Forecast?,
+        layout: Int,
     ): RemoteViews {
-        val v = RemoteViews(ctx.packageName, R.layout.widget_weather)
+        val v = RemoteViews(ctx.packageName, layout)
         v.setOnClickPendingIntent(R.id.widget_root, target.onTap)
 
         // ‹ › and dots only when there's more than one place

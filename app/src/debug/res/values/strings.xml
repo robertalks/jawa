@@ -3,6 +3,7 @@
 <resources>
     <string name="app_name">JaWa Dev</string>
     <string name="widget_name">JaWa Dev</string>
+    <string name="widget_icon_name">JaWa Dev big icon</string>
     <string name="widget_small_name">JaWa Dev small</string>
     <string name="widget_mini_name">JaWa Dev mini</string>
 </resources>
