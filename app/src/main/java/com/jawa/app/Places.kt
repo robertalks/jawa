@@ -27,15 +27,23 @@ data class Place(
 }
 
 /** One entry in the list of places shown in the app and widget. */
-data class PlaceRef(val key: String, val name: String, val isCurrent: Boolean)
+data class PlaceRef(val key: String, val name: String, val isCurrent: Boolean, val isHome: Boolean = false)
 
-/** Saved places (max 10) plus the optional "current location" entry, which is always first. */
+/**
+ * The places to show: current location (if on) first, then home (only while you're away
+ * from it), then up to 10 saved places. Home doesn't count toward the 10.
+ */
 object Places {
     const val MAX_SAVED = 10
     const val CURRENT_KEY = "cur"
+    const val HOME_KEY = "home"
+
+    /** Further than this from home counts as "away", and the home page appears. */
+    const val HOME_RADIUS_KM = 15f
 
     private const val KEY_SAVED = "places"
     private const val KEY_USE_CURRENT = "use_current"
+    private const val KEY_HOME = "home_place"
 
     fun saved(ctx: Context): List<Place> {
         val raw = Store.prefs(ctx).getString(KEY_SAVED, null) ?: return emptyList()
@@ -70,12 +78,47 @@ object Places {
         Store.prefs(ctx).edit().putBoolean(KEY_USE_CURRENT, on).apply()
     }
 
-    /** Everything to show, in order: current location (if on) then saved places. */
+    // --- home ---
+
+    fun home(ctx: Context): Place? =
+        Store.prefs(ctx).getString(KEY_HOME, null)?.let { runCatching { Place.fromJson(JSONObject(it)) }.getOrNull() }
+
+    fun setHome(ctx: Context, name: String, lat: Double, lon: Double) {
+        val home = Place(HOME_KEY, name, "", lat, lon)
+        Store.prefs(ctx).edit().putString(KEY_HOME, home.toJson().toString()).apply()
+        Store.deleteForecast(ctx, HOME_KEY) // belongs to the previous home
+    }
+
+    fun clearHome(ctx: Context) {
+        Store.prefs(ctx).edit().remove(KEY_HOME).apply()
+        Store.deleteForecast(ctx, HOME_KEY)
+    }
+
+    /** Distance from [current] (or the last known current location) to home, if both are known. */
+    fun kmFromHome(ctx: Context, current: Pair<Double, Double>? = Store.lastLatLon(ctx)): Float? {
+        val home = home(ctx) ?: return null
+        val cur = current ?: return null
+        return WeatherApi.distanceKm(home.lat, home.lon, cur.first, cur.second)
+    }
+
+    /**
+     * Should the home page be shown? Yes when you're away from it, or when there's no
+     * current location to compare with (current location off, or not known yet).
+     */
+    fun homeVisible(ctx: Context, current: Pair<Double, Double>? = Store.lastLatLon(ctx)): Boolean {
+        if (home(ctx) == null) return false
+        if (!useCurrent(ctx)) return true
+        val km = kmFromHome(ctx, current) ?: return true
+        return km > HOME_RADIUS_KM
+    }
+
+    /** Everything to show, in order: current location (if on), home (while away), saved places. */
     fun all(ctx: Context): List<PlaceRef> {
         val out = ArrayList<PlaceRef>()
         if (useCurrent(ctx)) {
             out += PlaceRef(CURRENT_KEY, Store.currentPlaceName(ctx) ?: "Current location", true)
         }
+        home(ctx)?.let { h -> if (homeVisible(ctx)) out += PlaceRef(HOME_KEY, h.name, false, isHome = true) }
         saved(ctx).forEach { out += PlaceRef(it.id, it.name, false) }
         return out
     }

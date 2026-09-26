@@ -82,6 +82,11 @@ class MainActivity : Activity() {
         setupSavedList()
         setupSearch()
         setupInterval()
+        findViewById<View>(R.id.home_remove).setOnClickListener {
+            Places.clearHome(this)
+            renderHome()
+            WidgetUpdates.all(this)
+        }
 
         btnLocation.setOnClickListener {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), REQ_LOCATION)
@@ -103,6 +108,7 @@ class MainActivity : Activity() {
         super.onResume()
         Store.prefs(this).registerOnSharedPreferenceChangeListener(prefsListener)
         renderStatus()
+        renderHome()
     }
 
     override fun onPause() {
@@ -162,6 +168,19 @@ class MainActivity : Activity() {
         renderCount()
         if (refetch) WeatherWorker.refreshNow(this)
         WidgetUpdates.all(this)
+    }
+
+    // --- home ---
+
+    private fun renderHome() {
+        val home = Places.home(this)
+        findViewById<TextView>(R.id.home_name).text = home?.name ?: "Not set"
+        findViewById<TextView>(R.id.home_sub).text = if (home != null) {
+            "Shown when you're more than ${Places.HOME_RADIUS_KM.toInt()} km away"
+        } else {
+            "In the full view, tap \"Set as home\" on your current location"
+        }
+        findViewById<View>(R.id.home_remove).visibility = if (home != null) View.VISIBLE else View.GONE
     }
 
     // --- refresh interval ---

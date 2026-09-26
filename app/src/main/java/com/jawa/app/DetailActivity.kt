@@ -1,6 +1,7 @@
 package com.jawa.app
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -17,6 +18,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import java.text.DateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -149,6 +151,7 @@ class DetailActivity : Activity() {
         val fc = place?.let { Store.forecast(this, it.key) }
 
         renderPills(places, place)
+        renderHomeAction(place)
         findViewById<TextView>(R.id.detail_dots).apply {
             visibility = if (places.size > 1) View.VISIBLE else View.GONE
             text = WidgetRenderer.dots(places.size, index)
@@ -196,13 +199,75 @@ class DetailActivity : Activity() {
         renderDays(fc)
     }
 
-    /** "📍 Here · Nepomuk", "Praha", "Wien" … "＋" */
+    /**
+     * On your current location: "🏠 Set as home" (or "🏠 Your home" if you're there).
+     * On the home page: "🏠 Home · 118 km away". Nothing on saved places.
+     */
+    private fun renderHomeAction(place: PlaceRef?) {
+        val v = findViewById<TextView>(R.id.home_action)
+        val home = Places.home(this)
+        val km = Places.kmFromHome(this)
+        when {
+            place == null -> v.visibility = View.GONE
+            place.isHome -> homeBadge(
+                v,
+                if (km != null && Places.useCurrent(this)) "🏠 Home · ${km.roundToInt()} km away" else "🏠 Home",
+            )
+            place.isCurrent && home != null && km != null && km <= Places.HOME_RADIUS_KM -> homeBadge(v, "🏠 Your home")
+            place.isCurrent && Store.lastLatLon(this) != null -> {
+                v.visibility = View.VISIBLE
+                v.text = "🏠 Set as home"
+                v.setTextColor(Color.WHITE)
+                v.setBackgroundResource(R.drawable.home_button_bg)
+                v.setOnClickListener { setHomeHere() }
+            }
+            else -> v.visibility = View.GONE
+        }
+    }
+
+    private fun homeBadge(v: TextView, text: String) {
+        v.visibility = View.VISIBLE
+        v.text = text
+        v.setTextColor(Color.rgb(0xFF, 0xD2, 0x7A))
+        v.setBackgroundResource(R.drawable.home_badge_bg)
+        v.setOnClickListener(null)
+        v.isClickable = false
+    }
+
+    /** Makes your current location home (asks first if it replaces another home). */
+    private fun setHomeHere() {
+        val here = Store.lastLatLon(this) ?: return
+        val name = Store.currentPlaceName(this) ?: "Home"
+        val apply = {
+            Places.setHome(this, name, here.first, here.second)
+            Toast.makeText(this, "Home set to $name", Toast.LENGTH_SHORT).show()
+            render()
+            WidgetUpdates.all(this)
+        }
+        val old = Places.home(this)
+        if (old == null) {
+            apply()
+        } else {
+            AlertDialog.Builder(this)
+                .setTitle("Change home?")
+                .setMessage("Your home is ${old.name}. Make $name your home instead?")
+                .setPositiveButton("Change") { _, _ -> apply() }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    /** "📍 Here · Nepomuk", "🏠 Praha", "Wien" … "＋" */
     private fun renderPills(places: List<PlaceRef>, selected: PlaceRef?) {
         pillsContainer.removeAllViews()
         var selectedView: View? = null
         places.forEach { p ->
             val on = p.key == selected?.key
-            val label = if (p.isCurrent) "📍 Here · ${p.name}" else p.name
+            val label = when {
+                p.isCurrent -> "📍 Here · ${p.name}"
+                p.isHome -> "🏠 ${p.name}"
+                else -> p.name
+            }
             val pill = pill(label, on).apply { setOnClickListener { select(p.key) } }
             if (on) selectedView = pill
             pillsContainer.addView(pill)

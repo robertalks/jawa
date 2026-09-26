@@ -37,6 +37,10 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
                 current = if (loc != null) loc.latitude to loc.longitude else Store.lastLatLon(ctx)
                 current?.let { keys += Places.CURRENT_KEY; points += it }
             }
+            // Home, only while it's shown (you're away from it)
+            Places.home(ctx)?.let { h ->
+                if (Places.homeVisible(ctx, current)) { keys += Places.HOME_KEY; points += h.lat to h.lon }
+            }
             Places.saved(ctx).forEach { keys += it.id; points += it.lat to it.lon }
 
             if (points.isEmpty()) {

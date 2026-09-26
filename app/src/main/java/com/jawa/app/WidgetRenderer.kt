@@ -88,7 +88,13 @@ object WidgetRenderer {
         val showDays = heightDp == 0 || heightDp >= HEIGHT_FOR_DAYS
         val slots = if (widthDp in 1 until WIDTH_FOR_5) 4 else 5
 
-        val placeLabel = target.place?.let { (if (it.isCurrent && many) "📍 " else "") + it.name }
+        val placeLabel = target.place?.let {
+            when {
+                it.isHome -> "🏠 "
+                it.isCurrent && many -> "📍 "
+                else -> ""
+            } + it.name
+        }
         val marker = when {
             snap.updating -> " ⟳"
             snap.error != null -> " ⚠"
