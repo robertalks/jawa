@@ -21,33 +21,17 @@
         android:minHeight="64dp"
         android:orientation="horizontal">
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
-
-        <TextView
-            android:tag="current_temp"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="0"
-            android:autoSizeMaxTextSize="160sp"
-            android:autoSizeMinTextSize="40sp"
-            android:autoSizeStepGranularity="2sp"
-            android:autoSizeTextType="uniform"
-            android:fontFamily="sans-serif"
-            android:gravity="start|center_vertical"
-            android:includeFontPadding="false"
-            android:maxLines="1"
-            android:text="14°"
-            android:textColor="@color/widget_text"
-            android:textStyle="bold" />
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <LinearLayout
                 android:tag="moon_row"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="top|start"
+                android:layout_marginBottom="2dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
                 <ImageView
@@ -66,7 +50,24 @@
                     android:textColor="#FFE7A0"
                     android:textSize="13sp" />
             </LinearLayout>
-        </FrameLayout>
+
+        <TextView
+            android:tag="current_temp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:autoSizeMaxTextSize="160sp"
+            android:autoSizeMinTextSize="40sp"
+            android:autoSizeStepGranularity="2sp"
+            android:autoSizeTextType="uniform"
+            android:fontFamily="sans-serif"
+            android:gravity="start|center_vertical"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="14°"
+            android:textColor="@color/widget_text"
+            android:textStyle="bold" />
+        </LinearLayout>
 
         <!-- Right: weather icon above place, description, today's high / low -->
         <LinearLayout

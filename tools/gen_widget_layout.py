@@ -108,13 +108,13 @@ def temp_view(width, height, weight, gravity, max_sp, min_sp):
             android:textStyle="bold" />'''
 
 
-# Moon phase label, laid over the top-left corner so nothing else moves or shrinks.
+# Moon phase label: a slim line at the top of the left side (icon / temperature below it).
 MOON = '''
             <LinearLayout
                 android:id="@+id/moon_row"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="top|start"
+                android:layout_marginBottom="2dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
                 <ImageView
@@ -146,13 +146,14 @@ HEADER_TEMP = f'''
         android:minHeight="64dp"
         android:orientation="horizontal">
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
-{temp_view("match_parent", "match_parent", 0, "start|center_vertical", 160, 40)}
+            android:layout_weight="1"
+            android:orientation="vertical">
 {MOON}
-        </FrameLayout>
+{temp_view("match_parent", "0dp", 1, "start|center_vertical", 160, 40)}
+        </LinearLayout>
 
         <!-- Right: weather icon above place, description, today's high / low -->
         <LinearLayout
@@ -191,22 +192,24 @@ HEADER_ICON = f'''
         android:minHeight="64dp"
         android:orientation="horizontal">
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+{MOON}
             <ImageView
                 android:id="@+id/current_icon"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_gravity="center_vertical"
+                android:layout_height="0dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="1"
                 android:adjustViewBounds="true"
                 android:importantForAccessibility="no"
                 android:maxWidth="180dp"
                 android:maxHeight="180dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/wx_partly_day" />
-{MOON}
-        </FrameLayout>
+        </LinearLayout>
 
         <!-- Right: temperature above place, description, today's high / low -->
         <LinearLayout
