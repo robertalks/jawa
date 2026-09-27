@@ -14,6 +14,8 @@ A small, ad-free Android weather app and home-screen widget for personal use.
   **JaWa mini** (1×1: temperature, place)
 - Tap the widget to open the full view (next 24 hours, 14-day forecast) for that place;
   swipe left/right there to change place. It refreshes at the same time
+- Moon phase: on the big widgets, a Moon card in the full view, and a moon for each of the
+  14 days. Calculated on the phone from the date (no download)
 - Place search and forecasts from Open-Meteo; all places are fetched in one request
 - Refreshes every ~30 minutes in the background
 - No Google Play services required
@@ -51,6 +53,21 @@ A small, ad-free Android weather app and home-screen widget for personal use.
   and install as a separate app, **JaWa Dev** (`com.jawa.app.debug`), so they never clash
   with the signed release.
 
+## Android Auto
+
+JaWa has its own screen in Android Auto (weather app category): a big temperature with
+the weather icon and place, plus today, tomorrow and the moon, and screens for the next
+days and your places. It uses the weather the phone app already downloaded.
+
+Android Auto hides apps that don't come from the Play Store, so once:
+
+1. Open Android Auto's settings on the phone (Settings → Connected devices → Android Auto,
+   or the Android Auto app).
+2. Tap **Version** at the bottom about 10 times until developer settings are enabled.
+3. Open the ⋮ menu → **Developer settings** → turn on **Unknown sources**.
+4. Connect to the car (or restart Android Auto). JaWa appears in the app list; it may need
+   adding via "Customise launcher" first.
+
 ## Building locally
 
 Open the folder in Android Studio, or from a terminal run `./gradlew assembleDebug`
@@ -70,7 +87,9 @@ version (8.13) the first time. Build with JDK 21 (Android Studio's built-in JBR 
 - `WidgetRenderer.kt` — what the widget shows, resize thresholds
 - `DetailActivity.kt`, `TempBarView.kt` — the 14-day detail screen
 - `MainActivity.kt`, `PlacesAdapter.kt` — settings (places, location, battery, manual refresh)
-- `Places.kt`, `Store.kt` — saved places and the on-device forecast cache
+- `Places.kt`, `Store.kt` — saved places, home and the on-device forecast cache
+- `Sky.kt` — decides sunny vs cloudy; `Moon.kt`, `MoonIcons.kt` — moon phase
+- `CarApp.kt` — the Android Auto screens
 - `WeatherWorker.kt` — background refresh (location → forecast → redraw)
 - `LocationHelper.kt`, `WeatherApi.kt` — location, Open-Meteo and place names
 - `WeatherCodes.kt` — weather code → icon and text

@@ -13,8 +13,8 @@ android {
         applicationId = "com.jawa.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 18
-        versionName = "0.18"
+        versionCode = 19
+        versionName = "0.19"
     }
 
     signingConfigs {
@@ -77,5 +77,8 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    // Android Auto
+    implementation("androidx.car.app:app:1.7.0")
+    implementation("androidx.car.app:app-projected:1.7.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
