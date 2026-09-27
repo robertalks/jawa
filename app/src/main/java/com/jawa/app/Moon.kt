@@ -1,7 +1,6 @@
 package com.jawa.app
 
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -9,8 +8,8 @@ import kotlin.math.sin
 
 /**
  * Moon phase, calculated from the date alone (no download, works offline).
- * Uses the average length of a lunar month counted from a known new moon; accurate to
- * within about half a day, which is plenty for showing the phase. Plain Kotlin, testable.
+ * Uses the real new / full moon moments (Meeus), so the phase agrees with published
+ * moon calendars to within minutes. Plain Kotlin, testable.
  */
 object Moon {
     /** Average days from one new moon to the next. */
@@ -23,28 +22,43 @@ object Moon {
     /** Number of phase icons (moon_00 … moon_15). */
     const val ICON_STEPS = 16
 
-    /** Days since the last new moon, 0 until [SYNODIC_DAYS]. */
+    /**
+     * Days since the last new moon, 0 until [SYNODIC_DAYS]. Placed between the real new and
+     * full moon moments (see [phaseTimeMs]), so "Full moon" lines up with the published date
+     * rather than drifting up to half a day like a plain average would.
+     */
     fun age(epochMs: Long): Double {
         val days = (epochMs - REF_NEW_MOON_MS) / DAY_MS
-        return ((days % SYNODIC_DAYS) + SYNODIC_DAYS) % SYNODIC_DAYS
+        val jd = epochMs / DAY_MS + 2440587.5
+        var k = floor((jd - 2451550.09766) / 29.530588861 * 2) / 2 - 1   // a half-step before now
+        var start = phaseTimeMs(k)
+        var end = phaseTimeMs(k + 0.5)
+        var guard = 0
+        while (end <= epochMs && guard++ < 6) { k += 0.5; start = end; end = phaseTimeMs(k + 0.5) }
+        if (start > epochMs || end <= epochMs) return meanAge(days)   // shouldn't happen
+        val half = SYNODIC_DAYS / 2
+        val base = if (k - floor(k) > 0.25) half else 0.0          // after a full moon: second half
+        return base + (epochMs - start).toDouble() / (end - start) * half
     }
+
+    private fun meanAge(days: Double) = ((days % SYNODIC_DAYS) + SYNODIC_DAYS) % SYNODIC_DAYS
 
     /** How much of the moon is lit, 0.0 (new) to 1.0 (full). */
     fun illumination(age: Double): Double = (1 - cos(2 * PI * age / SYNODIC_DAYS)) / 2
 
-    /** New, full and the quarters are only named within about a day of the exact moment. */
-    fun name(age: Double): String {
-        val p = SYNODIC_DAYS
-        return when {
-            age < 1 || age > p - 1 -> "New moon"
-            abs(age - p / 4) < 1 -> "First quarter"
-            abs(age - p / 2) < 1 -> "Full moon"
-            abs(age - 3 * p / 4) < 1 -> "Last quarter"
-            age < p / 4 -> "Waxing crescent"
-            age < p / 2 -> "Waxing gibbous"
-            age < 3 * p / 4 -> "Waning gibbous"
-            else -> "Waning crescent"
-        }
+    /**
+     * The name matches the icon: it's read from the same one-of-16 step, so a full-looking
+     * icon is always called "Full moon" (about ±22 hours around the exact moment).
+     */
+    fun name(age: Double): String = when (iconIndex(age)) {
+        0 -> "New moon"
+        in 1..3 -> "Waxing crescent"
+        4 -> "First quarter"
+        in 5..7 -> "Waxing gibbous"
+        8 -> "Full moon"
+        in 9..11 -> "Waning gibbous"
+        12 -> "Last quarter"
+        else -> "Waning crescent"
     }
 
     /** Which of the [ICON_STEPS] phase icons to show. */

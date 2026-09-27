@@ -178,6 +178,10 @@ def moon_phase(i):
     r = 26
     frac = i / MOON_STEPS                      # 0 = new, 0.5 = full
     k = math.cos(2 * math.pi * frac)            # 1 at new, -1 at full
+    if i in (1, 7, 9, 15):
+        # One step from new / full the true sliver is ~1 px at widget size and the icon
+        # reads as new / full. Draw it a bit wider so it looks like the name says.
+        k = math.copysign(0.8, k)
     rx = max(abs(k) * r, 0.01)
     if frac <= 0.5:   # waxing: right half + terminator
         lit = f"M{cx},{cy - r} A{r},{r} 0 0,1 {cx},{cy + r} A{rx:.2f},{r} 0 0,{0 if k > 0 else 1} {cx},{cy - r} Z"

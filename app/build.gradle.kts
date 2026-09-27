@@ -13,8 +13,8 @@ android {
         applicationId = "com.jawa.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 19
-        versionName = "0.19"
+        versionCode = 21
+        versionName = "0.21"
     }
 
     signingConfigs {

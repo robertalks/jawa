@@ -311,5 +311,17 @@
             android:text="JaWa · Just Another Weather App\n\nAdd the widget: long-press the home screen, open Widgets and pick JaWa. Resize it to 5 wide for five days. Use ‹ › at the bottom of the widget to switch places.\n\nForecast data and place search: Open-Meteo.com (CC BY 4.0)."
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="13sp" />
+
+        <!-- Filled from the installed app: versionName / versionCode in app/build.gradle.kts -->
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"
+            android:gravity="center"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textIsSelectable="true"
+            android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>

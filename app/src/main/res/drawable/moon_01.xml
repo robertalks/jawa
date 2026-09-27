@@ -5,7 +5,7 @@
     android:width="64dp" android:height="64dp"
     android:viewportWidth="64" android:viewportHeight="64">
     <path android:fillColor="#3A4466" android:fillAlpha="0.9" android:pathData="M6,32 a26,26 0 1,0 52,0 a26,26 0 1,0 -52,0 Z" />
-    <path android:pathData="M32,6 A26,26 0 0,1 32,58 A24.02,26 0 0,0 32,6 Z">
+    <path android:pathData="M32,6 A26,26 0 0,1 32,58 A20.80,26 0 0,0 32,6 Z">
         <aapt:attr name="android:fillColor">
             <gradient android:type="linear" android:startX="12" android:startY="8" android:endX="52" android:endY="58">
                 <item android:offset="0" android:color="#FFFFF3B8" />

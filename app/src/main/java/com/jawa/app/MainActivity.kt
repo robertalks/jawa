@@ -69,6 +69,7 @@ class MainActivity : Activity() {
         searchResults = findViewById(R.id.search_results)
 
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
+        findViewById<TextView>(R.id.version).text = versionText()
 
         // Current location on/off
         findViewById<Switch>(R.id.switch_current).apply {
@@ -369,4 +370,15 @@ class MainActivity : Activity() {
         private const val REQ_LOCATION = 1
         private const val REQ_BACKGROUND = 2
     }
+
+    /** "Version 0.20 (20)", from versionName / versionCode in app/build.gradle.kts. */
+    private fun versionText(): String = runCatching {
+        val info = if (Build.VERSION.SDK_INT >= 33) {
+            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION") packageManager.getPackageInfo(packageName, 0)
+        }
+        val code = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
+        "Version ${info.versionName} ($code)"
+    }.getOrDefault("")
 }
