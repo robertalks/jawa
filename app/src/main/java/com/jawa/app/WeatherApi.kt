@@ -15,11 +15,30 @@ object WeatherApi {
     private const val USER_AGENT = "JaWa/0.8 (Just Another Weather App, personal Android app)"
 
     /**
-     * Forecasts from Open-Meteo (free, no API key) for several places in ONE request.
-     * Returns one JSON object string per place, in the same order.
+     * Forecasts from Open-Meteo (free, no API key), one JSON object string per place, in
+     * the same order as [points]. Places inside the Czech ALADIN area get the Czech weather
+     * service's 1 km model (see [Aladin]); everywhere else Open-Meteo picks the best model.
+     * At most two requests, whatever the number of places.
      */
     fun fetchForecasts(points: List<Pair<Double, Double>>): List<String> {
         require(points.isNotEmpty())
+        val out = arrayOfNulls<String>(points.size)
+        val (aladin, other) = points.indices.partition { Aladin.covers(points[it].first, points[it].second) }
+        if (aladin.isNotEmpty()) {
+            val group = aladin.map { points[it] }
+            // If the ALADIN request fails or comes back incomplete, use the usual forecast instead.
+            val jsons = runCatching { requestForecasts(group, Aladin.MODEL).also { check(it.all(::complete)) } }
+                .getOrElse { requestForecasts(group, null) }
+            aladin.forEachIndexed { k, i -> out[i] = jsons[k] }
+        }
+        if (other.isNotEmpty()) {
+            val jsons = requestForecasts(other.map { points[it] }, null)
+            other.forEachIndexed { k, i -> out[i] = jsons[k] }
+        }
+        return out.map { it!! }
+    }
+
+    private fun requestForecasts(points: List<Pair<Double, Double>>, model: String?): List<String> {
         val lats = points.joinToString(",") { String.format(Locale.US, "%.4f", it.first) }
         val lons = points.joinToString(",") { String.format(Locale.US, "%.4f", it.second) }
         val url = "https://api.open-meteo.com/v1/forecast?latitude=$lats&longitude=$lons" +
@@ -28,16 +47,34 @@ object WeatherApi {
             "&hourly=temperature_2m,weather_code,is_day,cloud_cover_low,cloud_cover_mid,cloud_cover_high" +
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +
             "precipitation_sum,sunrise,sunset,sunshine_duration,daylight_duration,cloud_cover_mean" +
-            "&timezone=auto&forecast_days=14&forecast_hours=48"
+            "&timezone=auto&forecast_days=14&forecast_hours=48" +
+            (model?.let { "&models=$it" } ?: "")
         val body = get(url).trim()
         // One place → a JSON object; several → a JSON array of objects.
-        return if (body.startsWith("[")) {
+        val jsons = if (body.startsWith("[")) {
             val arr = JSONArray(body)
             (0 until arr.length()).map { arr.getJSONObject(it).toString() }
         } else {
             listOf(body)
         }
+        if (jsons.size != points.size) throw IOException("Expected ${points.size} forecasts, got ${jsons.size}")
+        return jsons
     }
+
+    /** Has everything the app can't do without (a model could leave gaps). */
+    internal fun complete(json: String): Boolean = runCatching {
+        val root = JSONObject(json)
+        val c = root.getJSONObject("current")
+        val h = root.getJSONObject("hourly")
+        val d = root.getJSONObject("daily")
+        fun JSONObject.full(key: String): Boolean {
+            val a = optJSONArray(key) ?: return false
+            return a.length() > 0 && (0 until a.length()).none { a.isNull(it) }
+        }
+        !c.isNull("temperature_2m") && !c.isNull("weather_code") &&
+            h.full("temperature_2m") && h.full("weather_code") &&
+            d.full("weather_code") && d.full("temperature_2m_max") && d.full("temperature_2m_min")
+    }.getOrDefault(false)
 
     /** Place search by name (Open-Meteo geocoding). */
     fun searchPlaces(query: String): List<Place> {

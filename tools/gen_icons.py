@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Generates the weather icons (res/drawable/wx_*.xml) and the launcher icon.
+"""Generates the weather icons (res/drawable/wx_*.xml) and moon phases (moon_*.xml).
+The launcher icon has its own script, tools/gen_launcher_icon.py.
 
 Each icon is described once as a list of shapes and written both as an Android
 <vector> drawable and (optionally) as SVG for previewing, so the preview matches
@@ -294,9 +295,6 @@ if __name__ == "__main__":
     for name, shapes in {**ICONS, **MOONS}.items():
         with open(os.path.join(draw, name + ".xml"), "w") as f:
             f.write(vector_xml(shapes))
-    # Launcher icon foreground: partly-sunny icon centred in the 108dp adaptive canvas
-    with open(os.path.join(draw, "ic_launcher_foreground.xml"), "w") as f:
-        f.write(vector_xml([group(ICONS["wx_partly_day"], 22, 22, 1)], 108, 108))
     if len(sys.argv) > 1:  # optional: SVGs for previewing
         os.makedirs(sys.argv[1], exist_ok=True)
         for name, shapes in {**ICONS, **MOONS}.items():

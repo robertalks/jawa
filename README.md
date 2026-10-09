@@ -3,7 +3,9 @@
 A small, ad-free Android weather app and home-screen widget for personal use.
 
 - Follows you: town-level (coarse) location, place name shown on the widget
-- Forecast from [Open-Meteo](https://open-meteo.com) (free, no API key)
+- Forecast from [Open-Meteo](https://open-meteo.com) (free, no API key). In and around the
+  Czech Republic (48.5–51.1 °N, 12–19 °E) it uses the Czech weather service's 1 km ALADIN
+  model, continued with ECMWF for the later days; elsewhere Open-Meteo's automatic choice
 - Works at 4×2 and 5×2: big current temperature plus the next 4–5 days
 - Up to 10 saved places besides your current location; switch with ‹ › on the widget
 - A **home** place: tap "🏠 Set as home" on your current location in the full view. When you're
@@ -96,6 +98,9 @@ version (8.13) the first time. Build with JDK 21 (Android Studio's built-in JBR 
 - `CompactWidgets.kt` — the small (2×1) and mini (1×1) widgets
 - `tools/gen_icons.py` — generates the weather icons in `res/drawable/wx_*.xml`
   (gradients; `python3 tools/gen_icons.py preview/` also writes SVG previews)
+- `tools/gen_launcher_icon.py` — generates the launcher icon (thermometer in a trench coat)
+  in `res/drawable/ic_launcher_*.xml`
+- `Aladin.kt` — the area where the Czech ALADIN model is used
 - `tools/gen_widget_layout.py` — generates both big widget layouts and their previews
 
 `app/debug.keystore` is only for debug builds; your release key never goes in the repo.
