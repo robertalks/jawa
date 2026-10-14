@@ -7,7 +7,7 @@ A small, ad-free Android weather app and home-screen widget for personal use.
   Czech Republic (48.5–51.1 °N, 12–19 °E) it uses the Czech weather service's 1 km ALADIN
   model, continued with ECMWF for the later days; elsewhere Open-Meteo's automatic choice
 - Air quality (European index, fine dust, NO₂, ozone, pollen) from Copernicus CAMS via
-  Open-Meteo: a coloured "Fair" on the big widgets, a coloured icon on the small ones,
+  Open-Meteo: a coloured "Fair (27)" on the big widgets, a coloured icon on the small ones,
   a full card in the app.
   Fetched at most hourly, in one request for all places
 - Works at 4×2 and 5×2: big current temperature plus the next 4–5 days
@@ -112,3 +112,5 @@ version (8.13) the first time. Build with JDK 21 (Android Studio's built-in JBR 
 
 Weather data by Open-Meteo.com (CC BY 4.0). Place names from the phone's
 geocoder or © OpenStreetMap contributors (Nominatim).
+
+This app has been created using Claude AI

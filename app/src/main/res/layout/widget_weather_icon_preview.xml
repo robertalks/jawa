@@ -93,7 +93,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:maxLines="1"
-                    android:text="Good"
+                    android:text="Good (15)"
                     android:textColor="#50F0E6"
                     android:textSize="13sp" />
             </LinearLayout>

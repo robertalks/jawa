@@ -244,8 +244,8 @@ class DetailActivity : Activity() {
             addView(LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(12) }
-                addView(text(AirQuality.NAMES[air.level], 22f, color = color).apply { setTypeface(typeface, Typeface.BOLD) })
-                addView(text("European index ${air.index} · ${AirQuality.ADVICE[air.level]}", 13f, 0.75f).apply {
+                addView(text("${AirQuality.NAMES[air.level]} (${air.index})", 22f, color = color).apply { setTypeface(typeface, Typeface.BOLD) })
+                addView(text("European air quality index · ${AirQuality.ADVICE[air.level]}", 13f, 0.75f).apply {
                     maxLines = 2
                 })
             })
