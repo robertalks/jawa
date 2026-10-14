@@ -155,6 +155,7 @@ class DetailActivity : Activity() {
         renderPills(places, place)
         renderHomeAction(place)
         renderMoonCard()
+        renderAirCard(place?.let { Store.airQuality(this, it.key) })
         findViewById<TextView>(R.id.detail_dots).apply {
             visibility = if (places.size > 1) View.VISIBLE else View.GONE
             text = WidgetRenderer.dots(places.size, index)
@@ -214,6 +215,139 @@ class DetailActivity : Activity() {
             .format(DateTimeFormatter.ofPattern("EEE d MMM, HH:mm", Locale.getDefault()))
         findViewById<TextView>(R.id.moon_card_next).text = "Next ${label.lowercase(Locale.getDefault())}: $whenText"
     }
+
+    /**
+     * Air quality for the place: level and index, the four main pollutants (each bar in its
+     * own level's colour), the next days' worst hour, and pollen while it's in the air.
+     */
+    private fun renderAirCard(air: AirQuality?) {
+        val card = findViewById<LinearLayout>(R.id.air_card)
+        card.removeAllViews()
+        if (air == null) {
+            card.visibility = View.GONE
+            return
+        }
+        card.visibility = View.VISIBLE
+        val color = AirQuality.COLORS[air.level]
+
+        card.addView(TextView(this).apply {
+            setTextAppearance(R.style.DetailCardTitle)
+            text = "Air quality"
+        })
+
+        // Level, index, advice
+        card.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, dp(8), 0, dp(6))
+            addView(airIcon(color, 40))
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(12) }
+                addView(text(AirQuality.NAMES[air.level], 22f, color = color).apply { setTypeface(typeface, Typeface.BOLD) })
+                addView(text("European index ${air.index} · ${AirQuality.ADVICE[air.level]}", 13f, 0.75f).apply {
+                    maxLines = 2
+                })
+            })
+        })
+
+        // Pollutants
+        listOf(
+            Triple("PM2.5", "fine dust", "pm25" to air.pm25),
+            Triple("PM10", "dust", "pm10" to air.pm10),
+            Triple("NO₂", "traffic", "no2" to air.no2),
+            Triple("O₃", "ozone", "o3" to air.o3),
+        ).forEach { (label, hint, kv) ->
+            val (kind, value) = kv
+            if (value != null) card.addView(pollutantRow(label, hint, kind, value))
+        }
+
+        // Next days
+        if (air.days.size > 1) {
+            card.addView(text("Next days (worst hour)", 11.5f, 0.6f).apply {
+                isAllCaps = true
+                letterSpacing = 0.05f
+                setPadding(0, dp(12), 0, dp(6))
+            })
+            card.addView(LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                air.days.forEachIndexed { i, (date, index) ->
+                    val lvl = AirQuality.levelOf(index)
+                    val c = AirQuality.COLORS[lvl]
+                    addView(LinearLayout(context).apply {
+                        orientation = LinearLayout.VERTICAL
+                        gravity = Gravity.CENTER_HORIZONTAL
+                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                        addView(text(WidgetRenderer.dayLabel(date, i), 12f))
+                        addView(airIcon(c, 22).apply {
+                            (layoutParams as LinearLayout.LayoutParams).setMargins(0, dp(3), 0, dp(3))
+                        })
+                        addView(text(AirQuality.NAMES[lvl], 12f, color = c))
+                    })
+                }
+            })
+        }
+
+        // Pollen (Europe, in season)
+        val pollen = if (air.pollen.isEmpty()) {
+            "🌿 Pollen: none in the air now"
+        } else {
+            "🌿 Pollen: " + air.pollen.take(3).joinToString(", ") { (name, g) -> "$name ${AirQuality.pollenLevel(g)}" }
+        }
+        card.addView(text(pollen, 13f, 0.9f).apply { setPadding(0, dp(12), 0, 0) })
+
+        card.addView(text("Copernicus CAMS · about 11 km, so very local smoke may not show", 11f, 0.45f).apply {
+            maxLines = 2
+            setPadding(0, dp(8), 0, 0)
+        })
+    }
+
+    private fun airIcon(color: Int, sizeDp: Int): ImageView = ImageView(this).apply {
+        setImageResource(R.drawable.ic_air)
+        setColorFilter(color)
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp))
+    }
+
+    private fun pollutantRow(label: String, hint: String, kind: String, value: Double): View =
+        LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(30))
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.BOTTOM
+                layoutParams = LinearLayout.LayoutParams(dp(104), LinearLayout.LayoutParams.WRAP_CONTENT)
+                addView(text(label, 13f).apply { setTypeface(typeface, Typeface.BOLD) })
+                addView(text(hint, 11.5f, 0.55f).apply { setPadding(dp(5), 0, 0, 0) })
+            })
+            // Bar: full width = the top of the "Very poor" band
+            val top = AirQuality.BANDS[kind]!!.last()
+            val share = (value / top).coerceIn(0.03, 1.0).toFloat()
+            val c = AirQuality.COLORS[AirQuality.pollutantLevel(kind, value)]
+            addView(LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    cornerRadius = dp(3).toFloat()
+                    setColor(Color.argb(26, 255, 255, 255))
+                }
+                layoutParams = LinearLayout.LayoutParams(0, dp(6), 1f)
+                addView(View(context).apply {
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        cornerRadius = dp(3).toFloat()
+                        setColor(c)
+                    }
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, share)
+                })
+                addView(View(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f - share)
+                })
+            })
+            addView(text("${value.roundToInt()} µg/m³", 13f).apply {
+                gravity = Gravity.END
+                layoutParams = LinearLayout.LayoutParams(dp(84), LinearLayout.LayoutParams.WRAP_CONTENT)
+            })
+        }
 
     /**
      * On your current location: "🏠 Set as home" (or "🏠 Your home" if you're there).

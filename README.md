@@ -6,6 +6,9 @@ A small, ad-free Android weather app and home-screen widget for personal use.
 - Forecast from [Open-Meteo](https://open-meteo.com) (free, no API key). In and around the
   Czech Republic (48.5–51.1 °N, 12–19 °E) it uses the Czech weather service's 1 km ALADIN
   model, continued with ECMWF for the later days; elsewhere Open-Meteo's automatic choice
+- Air quality (European index, fine dust, NO₂, ozone, pollen) from Copernicus CAMS via
+  Open-Meteo: a coloured "Air fair" line on the big widgets, a full card in the app.
+  Fetched at most hourly, in one request for all places
 - Works at 4×2 and 5×2: big current temperature plus the next 4–5 days
 - Up to 10 saved places besides your current location; switch with ‹ › on the widget
 - A **home** place: tap "🏠 Set as home" on your current location in the full view. When you're
@@ -101,6 +104,7 @@ version (8.13) the first time. Build with JDK 21 (Android Studio's built-in JBR 
 - `tools/gen_launcher_icon.py` — generates the launcher icon (thermometer in a trench coat)
   in `res/drawable/ic_launcher_*.xml`
 - `Aladin.kt` — the area where the Czech ALADIN model is used
+- `AirQuality.kt` — air quality: parsing, index levels, colours
 - `tools/gen_widget_layout.py` — generates both big widget layouts and their previews
 
 `app/debug.keystore` is only for debug builds; your release key never goes in the repo.

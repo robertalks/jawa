@@ -58,6 +58,10 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
                 Store.saveCurrentPlace(ctx, name, lat, lon)
             }
             Store.saveForecasts(ctx, keys.zip(jsons).toMap())
+            // Air quality: extra, so a failure here never spoils the weather update
+            if (Store.airDue(ctx, keys)) {
+                runCatching { Store.saveAir(ctx, keys.zip(WeatherApi.fetchAirQuality(points)).toMap()) }
+            }
             Result.success()
         } catch (e: Exception) {
             Store.saveError(ctx, "Update failed")

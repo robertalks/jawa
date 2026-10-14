@@ -255,6 +255,20 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Air quality (filled in code; hidden when there's no data for the place) -->
+        <LinearLayout
+            android:id="@+id/air_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/detail_card"
+            android:orientation="vertical"
+            android:paddingStart="14dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="12dp"
+            android:visibility="gone" />
+
         <!-- Next 24 hours -->
         <LinearLayout
             android:layout_width="match_parent"

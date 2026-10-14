@@ -76,6 +76,27 @@ object WeatherApi {
             d.full("weather_code") && d.full("temperature_2m_max") && d.full("temperature_2m_min")
     }.getOrDefault(false)
 
+    /**
+     * Air quality (Open-Meteo / Copernicus CAMS) for several places in one request,
+     * one JSON object string per place, in the same order. Hourly, 4 days.
+     */
+    fun fetchAirQuality(points: List<Pair<Double, Double>>): List<String> {
+        require(points.isNotEmpty())
+        val lats = points.joinToString(",") { String.format(Locale.US, "%.4f", it.first) }
+        val lons = points.joinToString(",") { String.format(Locale.US, "%.4f", it.second) }
+        val url = "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=$lats&longitude=$lons" +
+            "&hourly=" + AirQuality.HOURLY.joinToString(",") + "&timezone=auto&forecast_days=4"
+        val body = get(url).trim()
+        val jsons = if (body.startsWith("[")) {
+            val arr = JSONArray(body)
+            (0 until arr.length()).map { arr.getJSONObject(it).toString() }
+        } else {
+            listOf(body)
+        }
+        if (jsons.size != points.size) throw IOException("Expected ${points.size} results, got ${jsons.size}")
+        return jsons
+    }
+
     /** Place search by name (Open-Meteo geocoding). */
     fun searchPlaces(query: String): List<Place> {
         val q = URLEncoder.encode(query.trim(), "UTF-8")

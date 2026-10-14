@@ -51,17 +51,18 @@ object WidgetRenderer {
     fun build(ctx: Context, options: Bundle, target: Target, layout: Int): RemoteViews {
         val snap = Store.snapshot(ctx)
         val fc = target.place?.let { Store.forecast(ctx, it.key) }
+        val air = target.place?.let { Store.airQuality(ctx, it.key) }
         if (Build.VERSION.SDK_INT >= 31) {
             val map = LinkedHashMap<SizeF, RemoteViews>()
             for (w in RESPONSIVE_WIDTHS) for (h in RESPONSIVE_HEIGHTS) {
-                map[SizeF(w.toFloat(), h.toFloat())] = buildFor(ctx, w, h, target, snap, fc, layout)
+                map[SizeF(w.toFloat(), h.toFloat())] = buildFor(ctx, w, h, target, snap, fc, air, layout)
             }
             return RemoteViews(map)
         }
         // In portrait the launcher reports width as MIN_WIDTH and height as MAX_HEIGHT.
         val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0)
         val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
-        return buildFor(ctx, widthDp, heightDp, target, snap, fc, layout)
+        return buildFor(ctx, widthDp, heightDp, target, snap, fc, air, layout)
     }
 
     private fun buildFor(
@@ -71,6 +72,7 @@ object WidgetRenderer {
         target: Target,
         snap: Store.Snapshot,
         fc: Forecast?,
+        air: AirQuality?,
         layout: Int,
     ): RemoteViews {
         val v = RemoteViews(ctx.packageName, layout)
@@ -80,6 +82,17 @@ object WidgetRenderer {
         val moonAge = Moon.age(System.currentTimeMillis())
         v.setImageViewResource(R.id.moon_icon, MoonIcons.forAge(moonAge))
         v.setTextViewText(R.id.moon_text, Moon.name(moonAge))
+
+        // Air quality next to it: "〰 Air fair" in the level's colour (hidden without data)
+        if (air != null) {
+            val color = AirQuality.COLORS[air.level]
+            v.setViewVisibility(R.id.aq_row, View.VISIBLE)
+            v.setTextViewText(R.id.aq_text, "Air " + AirQuality.NAMES[air.level].lowercase(Locale.getDefault()))
+            v.setTextColor(R.id.aq_text, color)
+            v.setInt(R.id.aq_icon, "setColorFilter", color)
+        } else {
+            v.setViewVisibility(R.id.aq_row, View.GONE)
+        }
 
         // ‹ › and dots only when there's more than one place
         val many = target.count > 1

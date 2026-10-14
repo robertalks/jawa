@@ -17,6 +17,7 @@ object Store {
     private const val KEY_ERROR = "error"
     private const val KEY_UPDATING = "updating"
     private const val KEY_REFRESH_MIN = "refresh_minutes"
+    private const val KEY_AIR_FETCHED = "air_fetched"
     private const val PREFIX_WIDGET = "widget_place_"
 
     data class Snapshot(
@@ -80,7 +81,41 @@ object Store {
     fun deleteForecast(ctx: Context, key: String) {
         forecastFile(ctx, key).delete()
         synchronized(cache) { cache.remove(key) }
+        airFile(ctx, key).delete()
     }
+
+    // --- air quality, one file per place key (like forecasts) ---
+
+    private fun airFile(ctx: Context, key: String): File =
+        File(File(ctx.filesDir, "air").apply { mkdirs() }, key.replace(Regex("[^A-Za-z0-9_-]"), "_") + ".json")
+
+    /** Air quality at this hour, or null (none fetched yet, or none for this place). */
+    fun airQuality(ctx: Context, key: String): AirQuality? {
+        val f = airFile(ctx, key)
+        if (!f.exists()) return null
+        return runCatching { AirQuality.parse(f.readText()) }.getOrNull()
+    }
+
+    /**
+     * Air data only changes about once a day, so it's fetched at most hourly, or
+     * sooner for a place that has none yet.
+     */
+    fun airDue(ctx: Context, keys: List<String>): Boolean {
+        val last = prefs(ctx).getLong(KEY_AIR_FETCHED, 0)
+        return System.currentTimeMillis() - last > AIR_EVERY_MS || keys.any { !airFile(ctx, it).exists() }
+    }
+
+    fun saveAir(ctx: Context, byKey: Map<String, String>) {
+        byKey.forEach { (k, json) ->
+            val target = airFile(ctx, k)
+            val tmp = File(target.path + ".tmp")
+            tmp.writeText(json)
+            if (!tmp.renameTo(target)) { target.delete(); tmp.renameTo(target) }
+        }
+        prefs(ctx).edit().putLong(KEY_AIR_FETCHED, System.currentTimeMillis()).apply()
+    }
+
+    private const val AIR_EVERY_MS = 60 * 60 * 1000L
 
     /** One-time cleanup: older versions kept forecasts inside SharedPreferences. */
     fun migrate(ctx: Context) {

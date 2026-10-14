@@ -72,6 +72,32 @@
             android:gravity="end|center_vertical"
             android:orientation="vertical">
 
+            <LinearLayout
+                android:id="@+id/aq_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginStart="0dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+                <ImageView
+                    android:id="@+id/aq_icon"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_air" />
+                <TextView
+                    android:id="@+id/aq_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:maxLines="1"
+                    android:text="Air good"
+                    android:textColor="#50F0E6"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
         <TextView
             android:id="@+id/current_temp"
             android:layout_width="match_parent"
