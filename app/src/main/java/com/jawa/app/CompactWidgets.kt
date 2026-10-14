@@ -6,11 +6,12 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.view.View
 import android.widget.RemoteViews
 
 /**
  * The two small widgets: "JaWa small" (2×1: icon, temperature, place) and
- * "JaWa mini" (1×1: temperature, place). They show the first place in your list
+ * "JaWa mini" (1×1: temperature, place), both with the air quality icon by the place. They show the first place in your list
  * (your current location when that's on) and open the full view when tapped.
  * The temperature sizes itself in the layout, so nothing depends on the size the
  * launcher reports.
@@ -57,6 +58,14 @@ abstract class CompactWidgetProvider(
         } else {
             v.setTextViewText(R.id.temp, WidgetRenderer.deg(fc.current.temp))
             if (showIcon) v.setImageViewResource(R.id.icon, WeatherCodes.icon(fc.current.code, fc.current.isDay))
+        }
+        // Air quality: just the coloured icon in front of the place name
+        val air = place?.let { Store.airQuality(ctx, it.key) }
+        if (air != null) {
+            v.setViewVisibility(R.id.aq_icon, View.VISIBLE)
+            v.setInt(R.id.aq_icon, "setColorFilter", AirQuality.COLORS[air.level])
+        } else {
+            v.setViewVisibility(R.id.aq_icon, View.GONE)
         }
         mgr.updateAppWidget(id, v)
     }

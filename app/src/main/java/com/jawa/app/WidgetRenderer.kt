@@ -83,11 +83,11 @@ object WidgetRenderer {
         v.setImageViewResource(R.id.moon_icon, MoonIcons.forAge(moonAge))
         v.setTextViewText(R.id.moon_text, Moon.name(moonAge))
 
-        // Air quality next to it: "〰 Air fair" in the level's colour (hidden without data)
+        // Air quality next to it: "〰 Fair" in the level's colour (hidden without data)
         if (air != null) {
             val color = AirQuality.COLORS[air.level]
             v.setViewVisibility(R.id.aq_row, View.VISIBLE)
-            v.setTextViewText(R.id.aq_text, "Air " + AirQuality.NAMES[air.level].lowercase(Locale.getDefault()))
+            v.setTextViewText(R.id.aq_text, AirQuality.NAMES[air.level])
             v.setTextColor(R.id.aq_text, color)
             v.setInt(R.id.aq_icon, "setColorFilter", color)
         } else {

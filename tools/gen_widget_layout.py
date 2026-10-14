@@ -135,7 +135,7 @@ MOON = '''
             </LinearLayout>'''
 
 
-# Air quality: "〰 Air fair" (icon and text tinted with the level's colour); hidden until
+# Air quality: "〰 Fair" (icon and text tinted with the level's colour); hidden until
 # there's data. In "JaWa" it follows the moon on the same line; in "JaWa big icon" it sits
 # at the top of the right side, so the icon column doesn't get wider.
 def air(margin_start, gravity):
@@ -161,7 +161,7 @@ def air(margin_start, gravity):
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:maxLines="1"
-                    android:text="Air good"
+                    android:text="Good"
                     android:textColor="#50F0E6"
                     android:textSize="13sp" />
             </LinearLayout>'''

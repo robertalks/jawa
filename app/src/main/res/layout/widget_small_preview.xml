@@ -45,15 +45,30 @@
             android:text="11°"
             android:textColor="@color/widget_text"
             android:gravity="start|bottom" />
-        <TextView
-            android:tag="place"
+        <!-- Place, with the air quality icon in front (coloured by level; hidden without data) -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:text="Praha"
-            android:textColor="@color/widget_text"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:gravity="start|center_vertical"
+            android:orientation="horizontal">
+            <ImageView
+                android:tag="aq_icon"
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:layout_marginEnd="3dp"
+                android:importantForAccessibility="no"
+                android:tint="#50CCAA"
+                android:src="@drawable/ic_air" />
+            <TextView
+                android:tag="place"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Praha"
+                android:textColor="@color/widget_text"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
