@@ -18,12 +18,15 @@ object WeatherApi {
      * Forecasts from Open-Meteo (free, no API key), one JSON object string per place, in
      * the same order as [points]. Places inside the Czech ALADIN area get the Czech weather
      * service's 1 km model (see [Aladin]); everywhere else Open-Meteo picks the best model.
-     * At most two requests, whatever the number of places.
+     * At most two requests, whatever the number of places. [useAladin] = false (a setting)
+     * leaves every place on Open-Meteo's automatic choice.
      */
-    fun fetchForecasts(points: List<Pair<Double, Double>>): List<String> {
+    fun fetchForecasts(points: List<Pair<Double, Double>>, useAladin: Boolean = true): List<String> {
         require(points.isNotEmpty())
         val out = arrayOfNulls<String>(points.size)
-        val (aladin, other) = points.indices.partition { Aladin.covers(points[it].first, points[it].second) }
+        val (aladin, other) = points.indices.partition {
+            useAladin && Aladin.covers(points[it].first, points[it].second)
+        }
         if (aladin.isNotEmpty()) {
             val group = aladin.map { points[it] }
             // If the ALADIN request fails or comes back incomplete, use the usual forecast instead.

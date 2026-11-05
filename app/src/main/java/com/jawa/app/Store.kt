@@ -18,6 +18,7 @@ object Store {
     private const val KEY_UPDATING = "updating"
     private const val KEY_REFRESH_MIN = "refresh_minutes"
     private const val KEY_AIR_FETCHED = "air_fetched"
+    private const val KEY_USE_ALADIN = "use_aladin"
     private const val PREFIX_WIDGET = "widget_place_"
 
     data class Snapshot(
@@ -82,6 +83,13 @@ object Store {
         forecastFile(ctx, key).delete()
         synchronized(cache) { cache.remove(key) }
         airFile(ctx, key).delete()
+    }
+
+    /** Use ČHMÚ's ALADIN model for places in the Czech area (on by default). */
+    fun useAladin(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_USE_ALADIN, true)
+
+    fun setUseAladin(ctx: Context, on: Boolean) {
+        prefs(ctx).edit().putBoolean(KEY_USE_ALADIN, on).apply()
     }
 
     // --- air quality, one file per place key (like forecasts) ---

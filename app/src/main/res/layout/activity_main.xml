@@ -286,6 +286,44 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
+        <!-- Weather model for the Czech area: ČHMÚ ALADIN on/off (to compare the two) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/settings_row"
+            android:gravity="center_vertical"
+            android:minHeight="56dp"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Czech weather model (ALADIN)"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/aladin_note"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+            <Switch
+                android:id="@+id/switch_aladin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="8dp" />
@@ -308,7 +346,7 @@
             android:layout_marginTop="16dp"
             android:alpha="0.75"
             android:lineSpacingExtra="4dp"
-            android:text="JaWa · Just Another Weather App\n\nAdd the widget: long-press the home screen, open Widgets and pick JaWa. Resize it to 5 wide for five days. Use ‹ › at the bottom of the widget to switch places.\n\nForecast data and place search: Open-Meteo.com (CC BY 4.0). In and around the Czech Republic the forecast uses ČHMÚ's ALADIN model. Air quality and pollen: Copernicus Atmosphere Monitoring Service (CAMS), via Open-Meteo."
+            android:text="JaWa · Just Another Weather App\n\nAdd the widget: long-press the home screen, open Widgets and pick JaWa. Resize it to 5 wide for five days. Use ‹ › at the bottom of the widget to switch places.\n\nForecast data and place search: Open-Meteo.com (CC BY 4.0). In and around the Czech Republic the forecast can use ČHMÚ's ALADIN model (see Updates). Air quality and pollen: Copernicus Atmosphere Monitoring Service (CAMS), via Open-Meteo."
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="13sp" />
 

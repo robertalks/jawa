@@ -51,7 +51,7 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
                 return@withContext Result.success()
             }
 
-            val jsons = WeatherApi.fetchForecasts(points)
+            val jsons = WeatherApi.fetchForecasts(points, Store.useAladin(ctx))
             jsons.forEach { Forecast.parse(it) } // make sure they're usable before replacing the old ones
             current?.let { (lat, lon) ->
                 val name = resolvePlace(ctx, lat, lon)
