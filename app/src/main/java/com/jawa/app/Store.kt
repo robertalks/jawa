@@ -19,6 +19,7 @@ object Store {
     private const val KEY_REFRESH_MIN = "refresh_minutes"
     private const val KEY_AIR_FETCHED = "air_fetched"
     private const val KEY_USE_ALADIN = "use_aladin"
+    private const val KEY_WEATHER_SOURCE = "weather_source"
     private const val PREFIX_WIDGET = "widget_place_"
 
     data class Snapshot(
@@ -61,7 +62,11 @@ object Store {
         if (!f.exists()) return null
         val stamp = f.lastModified()
         synchronized(cache) { cache[key]?.let { if (it.first == stamp) return it.second } }
-        val parsed = runCatching { Forecast.parse(f.readText()) }.getOrNull() ?: return null
+        val text = f.readText()
+        val parsed = runCatching {
+            if (text.contains("\"_source\":\"met_norway\"")) MetNorway.parse(text)
+            else Forecast.parse(text)
+        }.getOrNull() ?: return null
         synchronized(cache) { cache[key] = stamp to parsed }
         return parsed
     }
@@ -90,6 +95,19 @@ object Store {
 
     fun setUseAladin(ctx: Context, on: Boolean) {
         prefs(ctx).edit().putBoolean(KEY_USE_ALADIN, on).apply()
+    }
+
+    enum class WeatherSource { OPEN_METEO, MET_NORWAY }
+
+    fun weatherSource(ctx: Context): WeatherSource =
+        if (prefs(ctx).getString(KEY_WEATHER_SOURCE, null) == "met_norway") WeatherSource.MET_NORWAY
+        else WeatherSource.OPEN_METEO
+
+    fun setWeatherSource(ctx: Context, source: WeatherSource) {
+        prefs(ctx).edit().putString(KEY_WEATHER_SOURCE, when (source) {
+            WeatherSource.OPEN_METEO -> "open_meteo"
+            WeatherSource.MET_NORWAY -> "met_norway"
+        }).apply()
     }
 
     // --- air quality, one file per place key (like forecasts) ---

@@ -84,6 +84,7 @@ class MainActivity : Activity() {
         setupSearch()
         setupInterval()
         setupAladin()
+        setupWeatherSource()
         findViewById<View>(R.id.home_remove).setOnClickListener {
             Places.clearHome(this)
             renderHome()
@@ -226,6 +227,40 @@ class MainActivity : Activity() {
             } else {
                 "Off: every place uses Open-Meteo's automatic choice"
             }
+    }
+
+    /** Weather source (Open-Meteo / MET Norway); hides the ALADIN row for MET Norway. */
+    private fun setupWeatherSource() {
+        val group = findViewById<RadioGroup>(R.id.source_group)
+        val source = Store.weatherSource(this)
+        group.check(if (source == Store.WeatherSource.MET_NORWAY) R.id.source_met_norway else R.id.source_open_meteo)
+        renderSourceNote(source)
+        renderAladinRow(source)
+        group.setOnCheckedChangeListener { _, checkedId ->
+            val newSource = if (checkedId == R.id.source_met_norway) Store.WeatherSource.MET_NORWAY
+                            else Store.WeatherSource.OPEN_METEO
+            if (newSource == Store.weatherSource(this)) return@setOnCheckedChangeListener
+            Store.setWeatherSource(this, newSource)
+            renderSourceNote(newSource)
+            renderAladinRow(newSource)
+            refresh()
+        }
+    }
+
+    private fun renderSourceNote(source: Store.WeatherSource) {
+        findViewById<TextView>(R.id.source_note).text = when (source) {
+            Store.WeatherSource.OPEN_METEO ->
+                "Global. 14-day forecast, rain probability, sunrise/sunset. " +
+                "Uses ECMWF and regional models."
+            Store.WeatherSource.MET_NORWAY ->
+                "Norwegian Meteorological Institute (yr.no). ~10-day forecast, " +
+                "no rain probability. Strong accuracy in Europe."
+        }
+    }
+
+    private fun renderAladinRow(source: Store.WeatherSource) {
+        findViewById<View>(R.id.row_aladin).visibility =
+            if (source == Store.WeatherSource.OPEN_METEO) View.VISIBLE else View.GONE
     }
 
     private fun renderIntervalNote() {

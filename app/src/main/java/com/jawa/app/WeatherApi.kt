@@ -15,14 +15,28 @@ object WeatherApi {
     private const val USER_AGENT = "JaWa/0.8 (Just Another Weather App, personal Android app)"
 
     /**
-     * Forecasts from Open-Meteo (free, no API key), one JSON object string per place, in
-     * the same order as [points]. Places inside the Czech ALADIN area get the Czech weather
-     * service's 1 km model (see [Aladin]); everywhere else Open-Meteo picks the best model.
-     * At most two requests, whatever the number of places. [useAladin] = false (a setting)
-     * leaves every place on Open-Meteo's automatic choice.
+     * Forecasts for [points]. When [source] is [Store.WeatherSource.MET_NORWAY] each place
+     * is fetched from api.met.no and parsed directly into a [Forecast]; the ALADIN flag is
+     * ignored in that case. Open-Meteo is the default.
      */
-    fun fetchForecasts(points: List<Pair<Double, Double>>, useAladin: Boolean = true): List<String> {
+    fun fetchForecasts(
+        points: List<Pair<Double, Double>>,
+        useAladin: Boolean = true,
+        source: Store.WeatherSource = Store.WeatherSource.OPEN_METEO,
+    ): List<String> {
         require(points.isNotEmpty())
+        if (source == Store.WeatherSource.MET_NORWAY) {
+            // MET Norway: one request per place, wrap the parsed Forecast back into a JSON
+            // string so the rest of the pipeline (Store, WeatherWorker) stays unchanged.
+            return points.map { (lat, lon) ->
+                val body = get(MetNorway.url(lat, lon))
+                // Validate by parsing; throws on bad data (WeatherWorker will retry)
+                MetNorway.parse(body)
+                // Store the raw MET Norway JSON; MetNorwayForecast marker lets Store know
+                // which parser to use when reading back. We embed it as a top-level field.
+                JSONObject(body).put("_source", "met_norway").toString()
+            }
+        }
         val out = arrayOfNulls<String>(points.size)
         val (aladin, other) = points.indices.partition {
             useAladin && Aladin.covers(points[it].first, points[it].second)

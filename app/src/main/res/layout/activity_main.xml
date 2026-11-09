@@ -288,6 +288,7 @@
 
         <!-- Weather model for the Czech area: ČHMÚ ALADIN on/off (to compare the two) -->
         <LinearLayout
+            android:id="@+id/row_aladin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -324,6 +325,47 @@
                 android:layout_height="wrap_content" />
         </LinearLayout>
 
+        <!-- Forecast provider: Open-Meteo vs MET Norway -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/settings_row"
+            android:orientation="vertical"
+            android:padding="12dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Forecast provider"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <RadioGroup
+                android:id="@+id/source_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="vertical">
+                <RadioButton
+                    android:id="@+id/source_open_meteo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Open-Meteo" />
+                <RadioButton
+                    android:id="@+id/source_met_norway"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="MET Norway (yr.no)" />
+            </RadioGroup>
+            <TextView
+                android:id="@+id/source_note"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp" />
+        </LinearLayout>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="8dp" />
@@ -346,7 +388,7 @@
             android:layout_marginTop="16dp"
             android:alpha="0.75"
             android:lineSpacingExtra="4dp"
-            android:text="JaWa · Just Another Weather App\n\nAdd the widget: long-press the home screen, open Widgets and pick JaWa. Resize it to 5 wide for five days. Use ‹ › at the bottom of the widget to switch places.\n\nForecast data and place search: Open-Meteo.com (CC BY 4.0). In and around the Czech Republic the forecast can use ČHMÚ's ALADIN model (see Updates). Air quality and pollen: Copernicus Atmosphere Monitoring Service (CAMS), via Open-Meteo."
+            android:text="JaWa · Just Another Weather App\n\nAdd the widget: long-press the home screen, open Widgets and pick JaWa. Resize it to 5 wide for five days. Use ‹ › at the bottom of the widget to switch places.\n\nForecast data and place search: Open-Meteo.com (CC BY 4.0). In and around the Czech Republic the forecast can use ČHMÚ's ALADIN model (see Updates). Alternatively, MET Norway (Meteorologisk institutt, CC BY 4.0) can be used as the forecast source. Air quality and pollen: Copernicus Atmosphere Monitoring Service (CAMS), via Open-Meteo."
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="13sp" />
 

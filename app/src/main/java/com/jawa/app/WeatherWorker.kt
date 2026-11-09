@@ -51,8 +51,12 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
                 return@withContext Result.success()
             }
 
-            val jsons = WeatherApi.fetchForecasts(points, Store.useAladin(ctx))
-            jsons.forEach { Forecast.parse(it) } // make sure they're usable before replacing the old ones
+            val jsons = WeatherApi.fetchForecasts(points, Store.useAladin(ctx), Store.weatherSource(ctx))
+            // Validate all before replacing cached files; parser choice mirrors Store.forecast()
+            jsons.forEach {
+                if (it.contains("\"_source\":\"met_norway\"")) MetNorway.parse(it)
+                else Forecast.parse(it)
+            }
             current?.let { (lat, lon) ->
                 val name = resolvePlace(ctx, lat, lon)
                 Store.saveCurrentPlace(ctx, name, lat, lon)
