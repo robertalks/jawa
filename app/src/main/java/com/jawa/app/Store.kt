@@ -98,13 +98,22 @@ object Store {
 
     enum class ModelChoice { AUTO, ALADIN, ECMWF, ICON }
 
-    fun modelChoice(ctx: Context): ModelChoice = when (prefs(ctx).getString(KEY_USE_ALADIN, null)) {
-        "aladin" -> ModelChoice.ALADIN
-        "ecmwf"  -> ModelChoice.ECMWF
-        "icon"   -> ModelChoice.ICON
-        // legacy boolean true stored by older versions
-        "true"   -> ModelChoice.ALADIN
-        else     -> ModelChoice.ALADIN  // default: ALADIN on for CZ users
+    fun modelChoice(ctx: Context): ModelChoice {
+        val raw = runCatching { prefs(ctx).getString(KEY_USE_ALADIN, null) }.getOrNull()
+        return when (raw) {
+            "aladin" -> ModelChoice.ALADIN
+            "ecmwf"  -> ModelChoice.ECMWF
+            "icon"   -> ModelChoice.ICON
+            "auto"   -> ModelChoice.AUTO
+            else     -> {
+                // Legacy: was stored as a Boolean; migrate it now.
+                val wasOn = runCatching { prefs(ctx).getBoolean(KEY_USE_ALADIN, true) }.getOrDefault(true)
+                val choice = if (wasOn) ModelChoice.ALADIN else ModelChoice.AUTO
+                prefs(ctx).edit().remove(KEY_USE_ALADIN).apply()
+                setModelChoice(ctx, choice)
+                choice
+            }
+        }
     }
 
     fun setModelChoice(ctx: Context, choice: ModelChoice) {
