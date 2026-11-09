@@ -2,11 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Coarse (town-level) location is enough for a forecast -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Lets the widget follow you while the app is closed -->
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <!-- Android Auto: lets JaWa draw its own big weather area (weather apps may) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="androidx.car.app.MAP_TEMPLATES" />
 
     <application
@@ -33,6 +31,17 @@
             android:name=".MainActivity"
             android:exported="false"
             android:label="Settings" />
+
+        <!-- Widget configuration: pick which place a big widget shows -->
+        <activity
+            android:name=".WidgetConfigActivity"
+            android:exported="true"
+            android:label="Widget setup"
+            android:theme="@style/AppTheme">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
 
         <receiver
             android:name=".WeatherWidgetProvider"

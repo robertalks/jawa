@@ -16,6 +16,8 @@ data class Forecast(
         val code: Int,
         val isDay: Boolean,
         val windKmh: Double,
+        val humidity: Int,
+        val uvIndex: Double,
     )
 
     data class Hour(val time: String, val temp: Double, val code: Int, val isDay: Boolean, val rainChance: Int)
@@ -48,6 +50,8 @@ data class Forecast(
                 ),
                 isDay = currentIsDay,
                 windKmh = c.optDouble("wind_speed_10m", 0.0),
+                humidity = c.optInt("relative_humidity_2m", 0),
+                uvIndex = c.optDouble("uv_index", 0.0),
             )
 
             // Times are local to the forecast location, "yyyy-MM-ddTHH:mm", so

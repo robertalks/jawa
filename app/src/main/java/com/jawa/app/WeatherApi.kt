@@ -30,11 +30,8 @@ object WeatherApi {
             // string so the rest of the pipeline (Store, WeatherWorker) stays unchanged.
             return points.map { (lat, lon) ->
                 val body = get(MetNorway.url(lat, lon))
-                // Validate by parsing; throws on bad data (WeatherWorker will retry)
-                MetNorway.parse(body)
-                // Store the raw MET Norway JSON; MetNorwayForecast marker lets Store know
-                // which parser to use when reading back. We embed it as a top-level field.
-                JSONObject(body).put("_source", "met_norway").toString()
+                MetNorway.parse(body, lat, lon)
+                JSONObject(body).put("_source", "met_norway").put("_lat", lat).put("_lon", lon).toString()
             }
         }
         val out = arrayOfNulls<String>(points.size)
@@ -60,7 +57,7 @@ object WeatherApi {
         val lons = points.joinToString(",") { String.format(Locale.US, "%.4f", it.second) }
         val url = "https://api.open-meteo.com/v1/forecast?latitude=$lats&longitude=$lons" +
             "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m," +
-            "cloud_cover_low,cloud_cover_mid,cloud_cover_high" +
+            "cloud_cover_low,cloud_cover_mid,cloud_cover_high,relative_humidity_2m,uv_index" +
             "&hourly=temperature_2m,weather_code,is_day,cloud_cover_low,cloud_cover_mid,cloud_cover_high" +
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max," +
             "precipitation_sum,sunrise,sunset,sunshine_duration,daylight_duration,cloud_cover_mean" +

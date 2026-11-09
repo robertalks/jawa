@@ -83,6 +83,16 @@ object WidgetRenderer {
         v.setImageViewResource(R.id.moon_icon, MoonIcons.forAge(moonAge))
         v.setTextViewText(R.id.moon_text, Moon.name(moonAge))
 
+        // Last-updated time, top-right of the moon row (hidden if never fetched)
+        if (snap.updatedMillis > 0) {
+            val t = java.time.Instant.ofEpochMilli(snap.updatedMillis)
+                .atZone(java.time.ZoneId.systemDefault())
+                .format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+            v.setTextViewText(R.id.updated_time, t)
+        } else {
+            v.setTextViewText(R.id.updated_time, "")
+        }
+
         // Air quality next to it: "〰 Fair (27)" in the level's colour (hidden without data)
         if (air != null) {
             val color = AirQuality.COLORS[air.level]

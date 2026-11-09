@@ -6,6 +6,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 /**
@@ -56,20 +57,21 @@ object MetNorway {
 
     /**
      * Parse a MET Norway compact JSON body into a [Forecast].
+     * [lat]/[lon] are used to calculate sunrise/sunset offline.
      * [nowMs] defaults to now; override in tests.
      */
-    fun parse(json: String, nowMs: Long = System.currentTimeMillis()): Forecast {
+    fun parse(json: String, lat: Double = 0.0, lon: Double = 0.0, nowMs: Long = System.currentTimeMillis()): Forecast {
         val root = JSONObject(json)
         val timeseries = root.getJSONObject("properties").getJSONArray("timeseries")
 
         val zone = ZoneId.systemDefault()
         val localFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm", Locale.US)
         val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
+        val nowZdt = Instant.ofEpochMilli(nowMs).atZone(zone)
+        val utcOffsetSeconds = nowZdt.offset.totalSeconds
 
         fun utcToLocal(isoUtc: String): ZonedDateTime =
             Instant.parse(isoUtc).atZone(zone)
-
-        val nowZdt = Instant.ofEpochMilli(nowMs).atZone(zone)
         val nowLocalStr = nowZdt.format(localFmt)
 
         // Index all entries by their local-time string for quick lookup
@@ -79,9 +81,10 @@ object MetNorway {
             val hour: Int,
             val temp: Double,
             val windMs: Double,
+            val humidity: Double,
             val cloudPct: Double,
-            val symbol1h: String?,  // next_1_hours symbol
-            val symbol6h: String?,  // next_6_hours symbol
+            val symbol1h: String?,
+            val symbol6h: String?,
             val rain1h: Double,
             val rain6h: Double,
         )
@@ -100,6 +103,7 @@ object MetNorway {
                 hour = zdt.hour,
                 temp = instant.getDouble("air_temperature"),
                 windMs = instant.optDouble("wind_speed", 0.0),
+                humidity = instant.optDouble("relative_humidity", 50.0),
                 cloudPct = instant.optDouble("cloud_area_fraction", 0.0),
                 symbol1h = next1?.getJSONObject("summary")?.optString("symbol_code"),
                 symbol6h = next6?.getJSONObject("summary")?.optString("symbol_code"),
@@ -116,10 +120,12 @@ object MetNorway {
         val current = Forecast.Current(
             time = curEntry.localTime,
             temp = curEntry.temp,
-            feelsLike = curEntry.temp,   // MET Norway compact doesn't include feels-like
+            feelsLike = feelsLike(curEntry.temp, curEntry.windMs, curEntry.humidity),
             code = curCode,
             isDay = curIsDay,
             windKmh = curEntry.windMs * 3.6,
+            humidity = curEntry.humidity.toInt(),
+            uvIndex = 0.0,
         )
 
         // Hours: up to 48 entries after now, 1-hour resolution where available
@@ -158,7 +164,7 @@ object MetNorway {
                 // 6-hourly: entries are at 00,06,12,18 — sum them without double-counting
                 es.filter { it.hour % 6 == 0 && it.symbol6h != null }.sumOf { it.rain6h }
             }
-            // Sunrise/sunset: not in MET Norway compact — leave null (shown as "–" in the UI)
+            // Sunrise/sunset calculated offline from lat/lon + date
             Forecast.Day(
                 date = date,
                 code = symbolToCode(repSymbol),
@@ -166,8 +172,8 @@ object MetNorway {
                 min = es.minOf { it.temp },
                 rainChance = 0,
                 rainMm = rain,
-                sunrise = null,
-                sunset = null,
+                sunrise = SunCalc.sunrise(lat, lon, date, utcOffsetSeconds),
+                sunset = SunCalc.sunset(lat, lon, date, utcOffsetSeconds),
             )
         }
 
@@ -193,5 +199,27 @@ object MetNorway {
             "clearsky" -> 0
             else -> 3
         }
+    }
+
+    /**
+     * Apparent temperature from air temp (°C), wind speed (m/s), and relative humidity (%).
+     * Wind chill below 10°C with wind > 1.3 m/s; heat index above 26°C; otherwise air temp.
+     */
+    fun feelsLike(tempC: Double, windMs: Double, humidity: Double): Double = when {
+        tempC <= 10.0 && windMs > 1.3 -> {
+            // Environment Canada wind chill formula
+            val v = (windMs * 3.6).pow(0.16)
+            13.12 + 0.6215 * tempC - 11.37 * v + 0.3965 * tempC * v
+        }
+        tempC >= 26.0 -> {
+            // Rothfusz heat index (°C version)
+            val rh = humidity
+            val t = tempC
+            -8.78469475556 + 1.61139411 * t + 2.33854883889 * rh +
+                -0.14611605 * t * rh + -0.012308094 * t * t +
+                -0.0164248277778 * rh * rh + 0.002211732 * t * t * rh +
+                0.00072546 * t * rh * rh + -0.000003582 * t * t * rh * rh
+        }
+        else -> tempC
     }
 }

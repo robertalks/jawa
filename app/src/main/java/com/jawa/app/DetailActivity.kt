@@ -176,13 +176,19 @@ class DetailActivity : Activity() {
         }
 
         if (fc == null) {
-            // No data for this place yet (e.g. just added): show an empty state.
             findViewById<ImageView>(R.id.cur_icon).setImageResource(R.drawable.wx_cloudy)
             findViewById<TextView>(R.id.cur_temp).text = "--°"
-            findViewById<TextView>(R.id.cur_desc).text = if (snap.updating) "Updating…" else "No data yet"
-            findViewById<TextView>(R.id.cur_feels).text = if (snap.updating) "" else "Tap Updated to refresh"
+            val (desc, sub) = when {
+                snap.updating -> "Updating…" to ""
+                !isNetworkAvailable() -> "No internet connection" to "Connect and tap ⟳ to load"
+                snap.error != null -> "Couldn't load data" to "Tap ⟳ to try again"
+                else -> "No data yet" to "Tap ⟳ to load"
+            }
+            findViewById<TextView>(R.id.cur_desc).text = desc
+            findViewById<TextView>(R.id.cur_feels).text = sub
             findViewById<TextView>(R.id.cur_hl).text = ""
-            listOf(R.id.chip_wind, R.id.chip_rain, R.id.chip_sunrise, R.id.chip_sunset)
+            listOf(R.id.chip_wind, R.id.chip_rain, R.id.chip_sunrise, R.id.chip_sunset,
+                   R.id.chip_humidity, R.id.chip_uv)
                 .forEach { findViewById<TextView>(it).text = "–" }
             hoursContainer.removeAllViews()
             daysContainer.removeAllViews()
@@ -202,6 +208,14 @@ class DetailActivity : Activity() {
         findViewById<TextView>(R.id.chip_rain).text = if (today != null) mm(today.rainMm) else "–"
         findViewById<TextView>(R.id.chip_sunrise).text = today?.sunrise ?: "–"
         findViewById<TextView>(R.id.chip_sunset).text = today?.sunset ?: "–"
+        findViewById<TextView>(R.id.chip_humidity).text = if (c.humidity > 0) "${c.humidity}%" else "–"
+        // UV index: hide the chip entirely on MET Norway (always 0)
+        if (c.uvIndex > 0) {
+            findViewById<View>(R.id.chip_uv_container).visibility = View.VISIBLE
+            findViewById<TextView>(R.id.chip_uv).text = uvLabel(c.uvIndex)
+        } else {
+            findViewById<View>(R.id.chip_uv_container).visibility = View.GONE
+        }
 
         renderHours(fc)
         renderDays(fc)
@@ -446,23 +460,26 @@ class DetailActivity : Activity() {
     private fun renderHours(fc: Forecast) {
         hoursContainer.removeAllViews()
         val c = fc.current
-        hoursContainer.addView(hourColumn("Now", WeatherCodes.icon(c.code, c.isDay), c.temp))
+        hoursContainer.addView(hourColumn("Now", WeatherCodes.icon(c.code, c.isDay), c.temp, 0))
         fc.hours.take(24).forEach { h ->
-            hoursContainer.addView(hourColumn(h.time.substring(11, 16), WeatherCodes.icon(h.code, h.isDay), h.temp))
+            hoursContainer.addView(hourColumn(h.time.substring(11, 16), WeatherCodes.icon(h.code, h.isDay), h.temp, h.rainChance))
         }
     }
 
-    private fun hourColumn(label: String, icon: Int, temp: Double): View =
+    private fun hourColumn(label: String, icon: Int, temp: Double, rainChance: Int): View =
         LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(dp(50), LinearLayout.LayoutParams.WRAP_CONTENT)
+            layoutParams = LinearLayout.LayoutParams(dp(52), LinearLayout.LayoutParams.WRAP_CONTENT)
             addView(text(label, 11f, 0.7f))
             addView(ImageView(context).apply {
                 setImageResource(icon)
                 layoutParams = LinearLayout.LayoutParams(dp(28), dp(28)).apply { topMargin = dp(4); bottomMargin = dp(4) }
             })
             addView(text(WidgetRenderer.deg(temp), 14f))
+            if (rainChance >= 20) {
+                addView(text("$rainChance%", 11f, 0.8f, RAIN))
+            }
         }
 
     private fun renderDays(fc: Forecast) {
@@ -561,6 +578,22 @@ class DetailActivity : Activity() {
     private fun mm(v: Double): String =
         if (v < 10) String.format(Locale.getDefault(), "%.1f mm", v).replace(Regex("[.,]0 "), " ")
         else "${v.roundToInt()} mm"
+
+    private fun uvLabel(uv: Double): String {
+        val level = when {
+            uv < 3 -> "Low"
+            uv < 6 -> "Moderate"
+            uv < 8 -> "High"
+            uv < 11 -> "Very high"
+            else -> "Extreme"
+        }
+        return "${uv.roundToInt()} · $level"
+    }
+
+    private fun isNetworkAvailable(): Boolean {
+        val cm = getSystemService(android.net.ConnectivityManager::class.java) ?: return false
+        return cm.activeNetwork != null
+    }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).roundToInt()
 

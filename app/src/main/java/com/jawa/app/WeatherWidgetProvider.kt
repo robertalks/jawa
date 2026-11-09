@@ -96,6 +96,10 @@ open class WeatherWidgetProvider : AppWidgetProvider() {
             Store.widgetPlace(ctx, id)?.takeIf { k -> places.any { it.key == k } } ?: places.firstOrNull()?.key
 
         private fun render(ctx: Context, mgr: AppWidgetManager, id: Int) {
+            renderWidget(ctx, mgr, id)
+        }
+
+        fun renderWidget(ctx: Context, mgr: AppWidgetManager, id: Int) {
             val places = Places.all(ctx)
             val key = selectedKey(ctx, id, places)
             val index = places.indexOfFirst { it.key == key }

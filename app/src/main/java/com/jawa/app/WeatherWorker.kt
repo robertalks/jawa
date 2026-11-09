@@ -52,10 +52,11 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
             }
 
             val jsons = WeatherApi.fetchForecasts(points, Store.useAladin(ctx), Store.weatherSource(ctx))
-            // Validate all before replacing cached files; parser choice mirrors Store.forecast()
             jsons.forEach {
-                if (it.contains("\"_source\":\"met_norway\"")) MetNorway.parse(it)
-                else Forecast.parse(it)
+                if (it.contains("\"_source\":\"met_norway\"")) {
+                    val j = org.json.JSONObject(it)
+                    MetNorway.parse(it, j.optDouble("_lat", 0.0), j.optDouble("_lon", 0.0))
+                } else Forecast.parse(it)
             }
             current?.let { (lat, lon) ->
                 val name = resolvePlace(ctx, lat, lon)
@@ -65,6 +66,14 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
             // Air quality: extra, so a failure here never spoils the weather update
             if (Store.airDue(ctx, keys)) {
                 runCatching { Store.saveAir(ctx, keys.zip(WeatherApi.fetchAirQuality(points)).toMap()) }
+                    .onFailure { Store.markAirFailed(ctx) }
+            }
+            // Notifications: rain incoming and air quality alerts for current location
+            Notifier.ensureChannel(ctx)
+            val curKey = if (Places.useCurrent(ctx)) Places.CURRENT_KEY else keys.firstOrNull()
+            curKey?.let {
+                Notifier.checkRain(ctx, Store.forecast(ctx, it))
+                Notifier.checkAir(ctx, Store.airQuality(ctx, it))
             }
             Result.success()
         } catch (e: Exception) {

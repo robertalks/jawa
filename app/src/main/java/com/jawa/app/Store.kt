@@ -2,6 +2,7 @@ package com.jawa.app
 
 import android.content.Context
 import android.content.SharedPreferences
+import org.json.JSONObject
 import java.io.File
 
 /**
@@ -18,8 +19,11 @@ object Store {
     private const val KEY_UPDATING = "updating"
     private const val KEY_REFRESH_MIN = "refresh_minutes"
     private const val KEY_AIR_FETCHED = "air_fetched"
+    private const val KEY_AIR_FAILED = "air_failed"
     private const val KEY_USE_ALADIN = "use_aladin"
     private const val KEY_WEATHER_SOURCE = "weather_source"
+    private const val KEY_NOTIFY_RAIN = "notify_rain"
+    private const val KEY_NOTIFY_AIR = "notify_air"
     private const val PREFIX_WIDGET = "widget_place_"
 
     data class Snapshot(
@@ -64,8 +68,10 @@ object Store {
         synchronized(cache) { cache[key]?.let { if (it.first == stamp) return it.second } }
         val text = f.readText()
         val parsed = runCatching {
-            if (text.contains("\"_source\":\"met_norway\"")) MetNorway.parse(text)
-            else Forecast.parse(text)
+            if (text.contains("\"_source\":\"met_norway\"")) {
+                val j = JSONObject(text)
+                MetNorway.parse(text, j.optDouble("_lat", 0.0), j.optDouble("_lon", 0.0))
+            } else Forecast.parse(text)
         }.getOrNull() ?: return null
         synchronized(cache) { cache[key] = stamp to parsed }
         return parsed
@@ -110,6 +116,14 @@ object Store {
         }).apply()
     }
 
+    // --- notifications ---
+
+    fun notifyRain(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_NOTIFY_RAIN, false)
+    fun setNotifyRain(ctx: Context, on: Boolean) { prefs(ctx).edit().putBoolean(KEY_NOTIFY_RAIN, on).apply() }
+
+    fun notifyAir(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_NOTIFY_AIR, false)
+    fun setNotifyAir(ctx: Context, on: Boolean) { prefs(ctx).edit().putBoolean(KEY_NOTIFY_AIR, on).apply() }
+
     // --- air quality, one file per place key (like forecasts) ---
 
     private fun airFile(ctx: Context, key: String): File =
@@ -122,13 +136,11 @@ object Store {
         return runCatching { AirQuality.parse(f.readText()) }.getOrNull()
     }
 
-    /**
-     * Air data only changes about once a day, so it's fetched at most hourly, or
-     * sooner for a place that has none yet.
-     */
+    /** Air is due on normal schedule, or sooner if a place has none or the last fetch failed. */
     fun airDue(ctx: Context, keys: List<String>): Boolean {
         val last = prefs(ctx).getLong(KEY_AIR_FETCHED, 0)
-        return System.currentTimeMillis() - last > AIR_EVERY_MS || keys.any { !airFile(ctx, it).exists() }
+        val failed = prefs(ctx).getBoolean(KEY_AIR_FAILED, false)
+        return System.currentTimeMillis() - last > AIR_EVERY_MS || failed || keys.any { !airFile(ctx, it).exists() }
     }
 
     fun saveAir(ctx: Context, byKey: Map<String, String>) {
@@ -138,7 +150,11 @@ object Store {
             tmp.writeText(json)
             if (!tmp.renameTo(target)) { target.delete(); tmp.renameTo(target) }
         }
-        prefs(ctx).edit().putLong(KEY_AIR_FETCHED, System.currentTimeMillis()).apply()
+        prefs(ctx).edit().putLong(KEY_AIR_FETCHED, System.currentTimeMillis()).remove(KEY_AIR_FAILED).apply()
+    }
+
+    fun markAirFailed(ctx: Context) {
+        prefs(ctx).edit().putBoolean(KEY_AIR_FAILED, true).apply()
     }
 
     private const val AIR_EVERY_MS = 60 * 60 * 1000L

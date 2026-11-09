@@ -28,7 +28,7 @@
 
             <LinearLayout
                 android:id="@+id/moon_row"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="2dp"
                 android:gravity="center_vertical"
@@ -41,13 +41,21 @@
                     android:src="@drawable/moon_08" />
                 <TextView
                     android:id="@+id/moon_text"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
+                    android:layout_weight="1"
                     android:maxLines="1"
                     android:text=""
                     android:textColor="#FFE7A0"
                     android:textSize="13sp" />
+                <TextView
+                    android:id="@+id/updated_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textColor="#73FFFFFF"
+                    android:textSize="11sp" />
             </LinearLayout>
             <ImageView
                 android:id="@+id/current_icon"

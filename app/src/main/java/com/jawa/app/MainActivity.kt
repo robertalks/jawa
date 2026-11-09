@@ -85,6 +85,7 @@ class MainActivity : Activity() {
         setupInterval()
         setupAladin()
         setupWeatherSource()
+        setupNotifications()
         findViewById<View>(R.id.home_remove).setOnClickListener {
             Places.clearHome(this)
             renderHome()
@@ -263,6 +264,30 @@ class MainActivity : Activity() {
             if (source == Store.WeatherSource.OPEN_METEO) View.VISIBLE else View.GONE
     }
 
+    private fun setupNotifications() {
+        Notifier.ensureChannel(this)
+        findViewById<Switch>(R.id.switch_notify_rain).apply {
+            isChecked = Store.notifyRain(this@MainActivity)
+            setOnCheckedChangeListener { _, on ->
+                Store.setNotifyRain(this@MainActivity, on)
+                if (on) requestNotificationPermission()
+            }
+        }
+        findViewById<Switch>(R.id.switch_notify_air).apply {
+            isChecked = Store.notifyAir(this@MainActivity)
+            setOnCheckedChangeListener { _, on ->
+                Store.setNotifyAir(this@MainActivity, on)
+                if (on) requestNotificationPermission()
+            }
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQ_NOTIFICATIONS)
+        }
+    }
+
     private fun renderIntervalNote() {
         findViewById<TextView>(R.id.interval_note).text =
             if (Store.refreshMinutes(this) < 15) {
@@ -427,6 +452,7 @@ class MainActivity : Activity() {
     companion object {
         private const val REQ_LOCATION = 1
         private const val REQ_BACKGROUND = 2
+        private const val REQ_NOTIFICATIONS = 3
     }
 
     /** "Version 0.20 (20)", from versionName / versionCode in app/build.gradle.kts. */
