@@ -3,27 +3,35 @@
 A small, ad-free Android weather app and home-screen widget for personal use.
 
 - Follows you: town-level (coarse) location, place name shown on the widget
-- Forecast from [Open-Meteo](https://open-meteo.com) (free, no API key). In and around the
-  Czech Republic (48.5–51.1 °N, 12–19 °E) it uses the Czech weather service's 1 km ALADIN
-  model, continued with ECMWF for the later days; elsewhere Open-Meteo's automatic choice
+- Forecast from your choice of provider (switchable in Settings):
+  - **Open-Meteo** (free, no API key) – 14-day forecast, rain probability, ECMWF and regional
+    models. In and around the Czech Republic (48.5–51.1 °N, 12–19 °E) it uses the Czech weather
+    service's 1 km ALADIN model, continued with ECMWF for the later days
+  - **MET Norway** (Meteorologisk institutt / yr.no, free, no API key) – ~10-day forecast,
+    strong accuracy in Europe, no rain probability
 - Air quality (European index, fine dust, NO₂, ozone, pollen) from Copernicus CAMS via
   Open-Meteo: a coloured "Fair (27)" on the big widgets, a coloured icon on the small ones,
   a full card in the app.
   Fetched at most hourly, in one request for all places
-- Works at 4×2 and 5×2: big current temperature plus the next 4–5 days
+- Works at 5×2: big current temperature plus the next 4–5 days. Also works at narrower sizes
 - Up to 10 saved places besides your current location; switch with ‹ › on the widget
 - A **home** place: tap "🏠 Set as home" on your current location in the full view. When you're
   more than 15 km away it appears as its own page (not counted in the 10 saved places)
 - Two big widgets with different layouts: **JaWa** (big temperature) and
-  **JaWa big icon** (big weather icon, temperature above the place)
+  **JaWa big icon** (big weather icon, temperature above the place). When placing a big widget
+  you can pick which place it shows from the configuration screen that appears
 - Two small widgets too: **JaWa small** (2×1: icon, temperature, place) and
   **JaWa mini** (1×1: temperature, place)
 - Tap the widget to open the full view (next 24 hours, 14-day forecast) for that place;
   swipe left/right there to change place. It refreshes at the same time
+- Full view shows humidity and UV index chips, and rain chance in the hourly strip (when ≥ 20%)
 - Moon phase: on the big widgets, a Moon card in the full view, and a moon for each of the
   14 days. Calculated on the phone from the date (no download)
-- Place search and forecasts from Open-Meteo; all places are fetched in one request
-- Refreshes every ~30 minutes in the background
+- Last-updated timestamp shown on the big widgets
+- Optional notifications (opt-in in Settings):
+  - **Rain incoming** – fires when rain chance ≥ 60% in the next 2 hours
+  - **Air quality** – fires when the air quality index reaches level 3 or above
+- Refreshes in the background at a configurable interval (10, 15, 30, 60, or 90 minutes; default 30)
 - No Google Play services required
 
 ## Getting the APK
@@ -34,11 +42,11 @@ A small, ad-free Android weather app and home-screen widget for personal use.
   `versionCode`) in `app/build.gradle.kts`, commit, then:
 
   ```
-  git tag v0.9
-  git push origin main v0.9
+  git tag v0.30
+  git push origin main v0.30
   ```
 
-  The *Release* workflow builds `JaWa-0.9.apk` (an APK, no AAB bundle) and publishes it
+  The *Release* workflow builds `JaWa-0.30.apk` (an APK, no AAB bundle) and publishes it
   on the repo's **Releases** page. Open it on your phone and install it (allow
   "install unknown apps" for your browser the first time).
 
@@ -86,7 +94,8 @@ version (8.13) the first time. Build with JDK 21 (Android Studio's built-in JBR 
 2. Tap **Allow location all the time** so the widget can follow you while the app is closed.
 3. If your phone kills background work (Xiaomi, Huawei, some Samsungs), use
    **Battery optimisation settings** and set JaWa to "not optimised".
-4. Long-press the home screen → Widgets → JaWa.
+4. Long-press the home screen → Widgets → JaWa. For the big widgets, a place-picker screen
+   will appear so you can choose which place the widget shows.
 
 ## Project layout
 
@@ -95,11 +104,15 @@ version (8.13) the first time. Build with JDK 21 (Android Studio's built-in JBR 
 - `MainActivity.kt`, `PlacesAdapter.kt` — settings (places, location, battery, manual refresh)
 - `Places.kt`, `Store.kt` — saved places, home and the on-device forecast cache
 - `Sky.kt` — decides sunny vs cloudy; `Moon.kt`, `MoonIcons.kt` — moon phase
+- `SunCalc.kt` — offline NOAA solar algorithm for sunrise/sunset
 - `CarApp.kt` — the Android Auto screens
 - `WeatherWorker.kt` — background refresh (location → forecast → redraw)
-- `LocationHelper.kt`, `WeatherApi.kt` — location, Open-Meteo and place names
+- `LocationHelper.kt`, `WeatherApi.kt` — location, Open-Meteo, MET Norway and place names
 - `WeatherCodes.kt` — weather code → icon and text
 - `CompactWidgets.kt` — the small (2×1) and mini (1×1) widgets
+- `MetNorway.kt` — MET Norway Locationforecast 2.0 fetching and parsing
+- `Notifier.kt` — rain incoming and air quality push notifications
+- `WidgetConfigActivity.kt` — place picker shown when placing a big widget
 - `tools/gen_icons.py` — generates the weather icons in `res/drawable/wx_*.xml`
   (gradients; `python3 tools/gen_icons.py preview/` also writes SVG previews)
 - `tools/gen_launcher_icon.py` — generates the launcher icon (thermometer in a trench coat)
@@ -110,7 +123,9 @@ version (8.13) the first time. Build with JDK 21 (Android Studio's built-in JBR 
 
 `app/debug.keystore` is only for debug builds; your release key never goes in the repo.
 
-Weather data by Open-Meteo.com (CC BY 4.0). Place names from the phone's
-geocoder or © OpenStreetMap contributors (Nominatim).
+Weather data by [Open-Meteo](https://open-meteo.com) (CC BY 4.0) or
+[MET Norway](https://api.met.no) (Meteorologisk institutt, CC BY 4.0), depending on the
+selected provider. Place names from the phone's geocoder or © OpenStreetMap contributors
+(Nominatim).
 
 This app has been created using Claude AI
