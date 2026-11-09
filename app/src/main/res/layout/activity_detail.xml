@@ -325,12 +325,12 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/data_source"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:alpha="0.45"
             android:gravity="center"
-            android:text="Weather data by Open-Meteo.com"
             android:textColor="#FFFFFF"
             android:textSize="11sp" />
     </LinearLayout>

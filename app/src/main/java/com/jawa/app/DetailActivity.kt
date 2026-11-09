@@ -156,6 +156,10 @@ class DetailActivity : Activity() {
         renderHomeAction(place)
         renderMoonCard()
         renderAirCard(place?.let { Store.airQuality(this, it.key) })
+        findViewById<TextView>(R.id.data_source).text = when (Store.weatherSource(this)) {
+            Store.WeatherSource.MET_NORWAY -> "Weather data by MET Norway (yr.no)"
+            Store.WeatherSource.OPEN_METEO -> "Weather data by Open-Meteo.com"
+        }
         findViewById<TextView>(R.id.detail_dots).apply {
             visibility = if (places.size > 1) View.VISIBLE else View.GONE
             text = WidgetRenderer.dots(places.size, index)
