@@ -23,7 +23,7 @@ object WidgetRenderer {
     // the widget size, so thresholds are kept low: only a really narrow widget drops to
     // 4 days, and only a 1-row widget drops the days.
     private const val HEIGHT_FOR_DAYS = 110   // ~2 rows
-    private const val WIDTH_FOR_5 = 230
+    private const val WIDTH_FOR_5 = 200
 
     // Sizes offered to the launcher on Android 12+ (it uses the largest that fits).
     private val RESPONSIVE_WIDTHS = listOf(150, WIDTH_FOR_5)
