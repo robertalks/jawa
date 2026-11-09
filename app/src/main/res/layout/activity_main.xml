@@ -286,43 +286,56 @@
                 android:textSize="12sp" />
         </LinearLayout>
 
-        <!-- Weather model for the Czech area: ČHMÚ ALADIN on/off (to compare the two) -->
+        <!-- Weather model (Open-Meteo only; hidden when MET Norway is selected) -->
         <LinearLayout
             android:id="@+id/row_aladin"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:background="@drawable/settings_row"
-            android:gravity="center_vertical"
-            android:minHeight="56dp"
-            android:orientation="horizontal"
-            android:paddingStart="12dp"
-            android:paddingEnd="8dp">
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Czech weather model (ALADIN)"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-                <TextView
-                    android:id="@+id/aladin_note"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-            <Switch
-                android:id="@+id/switch_aladin"
+            android:orientation="vertical"
+            android:padding="12dp">
+            <TextView
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:text="Weather model"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <RadioGroup
+                android:id="@+id/model_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="vertical">
+                <RadioButton
+                    android:id="@+id/model_auto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Automatic" />
+                <RadioButton
+                    android:id="@+id/model_aladin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="ALADIN (Czech area, 1 km)" />
+                <RadioButton
+                    android:id="@+id/model_ecmwf"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="ECMWF IFS (global, 0.4°)" />
+                <RadioButton
+                    android:id="@+id/model_icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="ICON (DWD, Central Europe)" />
+            </RadioGroup>
+            <TextView
+                android:id="@+id/model_note"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp" />
         </LinearLayout>
 
         <!-- Forecast provider: Open-Meteo vs MET Norway -->

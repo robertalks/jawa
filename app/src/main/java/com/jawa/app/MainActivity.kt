@@ -21,6 +21,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.RadioGroup
+import android.widget.RadioButton
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -83,7 +84,7 @@ class MainActivity : Activity() {
         setupSavedList()
         setupSearch()
         setupInterval()
-        setupAladin()
+        setupModel()
         setupWeatherSource()
         setupNotifications()
         findViewById<View>(R.id.home_remove).setOnClickListener {
@@ -208,26 +209,35 @@ class MainActivity : Activity() {
         }
     }
 
-    /** ALADIN on/off for the Czech area; switching fetches the forecast again right away. */
-    private fun setupAladin() {
-        findViewById<Switch>(R.id.switch_aladin).apply {
-            isChecked = Store.useAladin(this@MainActivity)
-            renderAladinNote(isChecked)
-            setOnCheckedChangeListener { _, on ->
-                Store.setUseAladin(this@MainActivity, on)
-                renderAladinNote(on)
-                refresh()
-            }
+    private val modelButtons = mapOf(
+        Store.ModelChoice.AUTO   to R.id.model_auto,
+        Store.ModelChoice.ALADIN to R.id.model_aladin,
+        Store.ModelChoice.ECMWF  to R.id.model_ecmwf,
+        Store.ModelChoice.ICON   to R.id.model_icon,
+    )
+
+    private fun setupModel() {
+        val group = findViewById<RadioGroup>(R.id.model_group)
+        val choice = Store.modelChoice(this)
+        group.check(modelButtons[choice] ?: R.id.model_aladin)
+        renderModelNote(choice)
+        group.setOnCheckedChangeListener { _, checkedId ->
+            val newChoice = modelButtons.entries.firstOrNull { it.value == checkedId }?.key
+                ?: return@setOnCheckedChangeListener
+            if (newChoice == Store.modelChoice(this)) return@setOnCheckedChangeListener
+            Store.setModelChoice(this, newChoice)
+            renderModelNote(newChoice)
+            refresh()
         }
     }
 
-    private fun renderAladinNote(on: Boolean) {
-        findViewById<TextView>(R.id.aladin_note).text =
-            if (on) {
-                "On: places in and around the Czech Republic use ČHMÚ's 1 km model"
-            } else {
-                "Off: every place uses Open-Meteo's automatic choice"
-            }
+    private fun renderModelNote(choice: Store.ModelChoice) {
+        findViewById<TextView>(R.id.model_note).text = when (choice) {
+            Store.ModelChoice.AUTO   -> "Open-Meteo picks the best model for each location automatically."
+            Store.ModelChoice.ALADIN -> "ČHMÚ's 1 km model for Czech and Slovak area; ECMWF continues it beyond ~3 days. Outside the area, automatic."
+            Store.ModelChoice.ECMWF  -> "ECMWF IFS 0.4° global model. Best medium-range accuracy worldwide."
+            Store.ModelChoice.ICON   -> "Deutscher Wetterdienst ICON seamless. Strong short-range accuracy in Central Europe."
+        }
     }
 
     /** Weather source (Open-Meteo / MET Norway); hides the ALADIN row for MET Norway. */

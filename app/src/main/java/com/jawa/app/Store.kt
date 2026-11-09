@@ -96,11 +96,24 @@ object Store {
         airFile(ctx, key).delete()
     }
 
-    /** Use ČHMÚ's ALADIN model for places in the Czech area (on by default). */
-    fun useAladin(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_USE_ALADIN, true)
+    enum class ModelChoice { AUTO, ALADIN, ECMWF, ICON }
 
-    fun setUseAladin(ctx: Context, on: Boolean) {
-        prefs(ctx).edit().putBoolean(KEY_USE_ALADIN, on).apply()
+    fun modelChoice(ctx: Context): ModelChoice = when (prefs(ctx).getString(KEY_USE_ALADIN, null)) {
+        "aladin" -> ModelChoice.ALADIN
+        "ecmwf"  -> ModelChoice.ECMWF
+        "icon"   -> ModelChoice.ICON
+        // legacy boolean true stored by older versions
+        "true"   -> ModelChoice.ALADIN
+        else     -> ModelChoice.ALADIN  // default: ALADIN on for CZ users
+    }
+
+    fun setModelChoice(ctx: Context, choice: ModelChoice) {
+        prefs(ctx).edit().putString(KEY_USE_ALADIN, when (choice) {
+            ModelChoice.AUTO   -> "auto"
+            ModelChoice.ALADIN -> "aladin"
+            ModelChoice.ECMWF  -> "ecmwf"
+            ModelChoice.ICON   -> "icon"
+        }).apply()
     }
 
     enum class WeatherSource { OPEN_METEO, MET_NORWAY }

@@ -51,7 +51,7 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
                 return@withContext Result.success()
             }
 
-            val jsons = WeatherApi.fetchForecasts(points, Store.useAladin(ctx), Store.weatherSource(ctx))
+            val jsons = WeatherApi.fetchForecasts(points, Store.modelChoice(ctx), Store.weatherSource(ctx))
             jsons.forEach {
                 if (it.contains("\"_source\":\"met_norway\"")) {
                     val j = org.json.JSONObject(it)

@@ -16,18 +16,15 @@ object WeatherApi {
 
     /**
      * Forecasts for [points]. When [source] is [Store.WeatherSource.MET_NORWAY] each place
-     * is fetched from api.met.no and parsed directly into a [Forecast]; the ALADIN flag is
-     * ignored in that case. Open-Meteo is the default.
+     * is fetched from api.met.no; [model] is ignored in that case. Open-Meteo is the default.
      */
     fun fetchForecasts(
         points: List<Pair<Double, Double>>,
-        useAladin: Boolean = true,
+        model: Store.ModelChoice = Store.ModelChoice.ALADIN,
         source: Store.WeatherSource = Store.WeatherSource.OPEN_METEO,
     ): List<String> {
         require(points.isNotEmpty())
         if (source == Store.WeatherSource.MET_NORWAY) {
-            // MET Norway: one request per place, wrap the parsed Forecast back into a JSON
-            // string so the rest of the pipeline (Store, WeatherWorker) stays unchanged.
             return points.map { (lat, lon) ->
                 val body = get(MetNorway.url(lat, lon))
                 MetNorway.parse(body, lat, lon)
@@ -35,15 +32,27 @@ object WeatherApi {
             }
         }
         val out = arrayOfNulls<String>(points.size)
-        val (aladin, other) = points.indices.partition {
-            useAladin && Aladin.covers(points[it].first, points[it].second)
+        // ALADIN only applies inside its geographic domain; other models apply globally.
+        val (special, other) = when (model) {
+            Store.ModelChoice.ALADIN -> points.indices.partition { Aladin.covers(points[it].first, points[it].second) }
+            else -> Pair(points.indices.toList(), emptyList())
         }
-        if (aladin.isNotEmpty()) {
-            val group = aladin.map { points[it] }
-            // If the ALADIN request fails or comes back incomplete, use the usual forecast instead.
-            val jsons = runCatching { requestForecasts(group, Aladin.MODEL).also { check(it.all(::complete)) } }
-                .getOrElse { requestForecasts(group, null) }
-            aladin.forEachIndexed { k, i -> out[i] = jsons[k] }
+        val specialModel = when (model) {
+            Store.ModelChoice.ALADIN -> Aladin.MODEL
+            Store.ModelChoice.ECMWF  -> "ecmwf_ifs04"
+            Store.ModelChoice.ICON   -> "icon_seamless"
+            Store.ModelChoice.AUTO   -> null
+        }
+        if (special.isNotEmpty()) {
+            val group = special.map { points[it] }
+            val jsons = if (specialModel != null) {
+                // Fall back to automatic if the model request fails or comes back incomplete.
+                runCatching { requestForecasts(group, specialModel).also { check(it.all(::complete)) } }
+                    .getOrElse { requestForecasts(group, null) }
+            } else {
+                requestForecasts(group, null)
+            }
+            special.forEachIndexed { k, i -> out[i] = jsons[k] }
         }
         if (other.isNotEmpty()) {
             val jsons = requestForecasts(other.map { points[it] }, null)
