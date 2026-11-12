@@ -154,6 +154,7 @@ class DetailActivity : Activity() {
 
         renderPills(places, place)
         renderHomeAction(place)
+        renderFavoriteAction(place)
         renderMoonCard()
         renderAirCard(place?.let { Store.airQuality(this, it.key) })
         findViewById<TextView>(R.id.data_source).text = when (Store.weatherSource(this)) {
@@ -369,7 +370,8 @@ class DetailActivity : Activity() {
 
     /**
      * On your current location: "🏠 Set as home" (or "🏠 Your home" if you're there).
-     * On the home page: "🏠 Home · 118 km away". Nothing on saved places.
+     * On the home page: "🏠 Home · 118 km away". On a saved place: "🏠 Set as home".
+     * Nothing on favorites (they have their own action).
      */
     private fun renderHomeAction(place: PlaceRef?) {
         val v = findViewById<TextView>(R.id.home_action)
@@ -389,6 +391,18 @@ class DetailActivity : Activity() {
                 v.setBackgroundResource(R.drawable.home_button_bg)
                 v.setOnClickListener { setHomeHere() }
             }
+            !place.isCurrent && !place.isHome -> {
+                val savedPlace = Places.saved(this).firstOrNull { it.id == place.key }
+                if (savedPlace != null) {
+                    v.visibility = View.VISIBLE
+                    v.text = "🏠 Set as home"
+                    v.setTextColor(Color.WHITE)
+                    v.setBackgroundResource(R.drawable.home_button_bg)
+                    v.setOnClickListener { setSavedPlaceAsHome(savedPlace) }
+                } else {
+                    v.visibility = View.GONE
+                }
+            }
             else -> v.visibility = View.GONE
         }
     }
@@ -400,6 +414,25 @@ class DetailActivity : Activity() {
         v.setBackgroundResource(R.drawable.home_badge_bg)
         v.setOnClickListener(null)
         v.isClickable = false
+    }
+
+    /** ⭐/☆ favorite toggle shown on saved places (not current location or home). */
+    private fun renderFavoriteAction(place: PlaceRef?) {
+        val v = findViewById<TextView>(R.id.favorite_action)
+        if (place == null || place.isCurrent || place.isHome) {
+            v.visibility = View.GONE
+            return
+        }
+        val fav = Places.isFavorite(this, place.key)
+        v.visibility = View.VISIBLE
+        v.text = if (fav) "★ Favorite" else "☆ Favorite"
+        v.setTextColor(if (fav) Color.rgb(0xFF, 0xD2, 0x7A) else Color.WHITE)
+        v.setBackgroundResource(if (fav) R.drawable.home_badge_bg else R.drawable.home_button_bg)
+        v.setOnClickListener {
+            Places.setFavorite(this, place.key, !fav)
+            render()
+            WidgetUpdates.all(this)
+        }
     }
 
     /** Makes your current location home (asks first if it replaces another home). */
@@ -425,7 +458,28 @@ class DetailActivity : Activity() {
         }
     }
 
-    /** "📍 Here · Nepomuk", "🏠 Praha", "Wien" … "＋" */
+    /** Makes a saved place home (asks first if it replaces another home). */
+    private fun setSavedPlaceAsHome(place: Place) {
+        val apply = {
+            Places.setHome(this, place.name, place.lat, place.lon)
+            Toast.makeText(this, "Home set to ${place.name}", Toast.LENGTH_SHORT).show()
+            render()
+            WidgetUpdates.all(this)
+        }
+        val old = Places.home(this)
+        if (old == null) {
+            apply()
+        } else {
+            AlertDialog.Builder(this)
+                .setTitle("Change home?")
+                .setMessage("Your home is ${old.name}. Make ${place.name} your home instead?")
+                .setPositiveButton("Change") { _, _ -> apply() }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+
+    /** "📍 Here · Nepomuk", "🏠 Praha", "⭐ Wien", "Wien" … "＋" */
     private fun renderPills(places: List<PlaceRef>, selected: PlaceRef?) {
         pillsContainer.removeAllViews()
         var selectedView: View? = null
@@ -434,6 +488,7 @@ class DetailActivity : Activity() {
             val label = when {
                 p.isCurrent -> "📍 Here · ${p.name}"
                 p.isHome -> "🏠 ${p.name}"
+                p.isFavorite -> "⭐ ${p.name}"
                 else -> p.name
             }
             val pill = pill(label, on).apply { setOnClickListener { select(p.key) } }

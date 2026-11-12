@@ -64,6 +64,7 @@ class WidgetConfigActivity : Activity() {
         val label = when {
             place.isCurrent -> "📍 Here · ${place.name}"
             place.isHome -> "🏠 ${place.name}"
+            place.isFavorite -> "⭐ ${place.name}"
             else -> place.name
         }
         text = label

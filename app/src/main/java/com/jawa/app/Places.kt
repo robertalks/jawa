@@ -27,7 +27,7 @@ data class Place(
 }
 
 /** One entry in the list of places shown in the app and widget. */
-data class PlaceRef(val key: String, val name: String, val isCurrent: Boolean, val isHome: Boolean = false)
+data class PlaceRef(val key: String, val name: String, val isCurrent: Boolean, val isHome: Boolean = false, val isFavorite: Boolean = false)
 
 /**
  * The places to show: current location (if on) first, then home (only while you're away
@@ -44,6 +44,7 @@ object Places {
     private const val KEY_SAVED = "places"
     private const val KEY_USE_CURRENT = "use_current"
     private const val KEY_HOME = "home_place"
+    private const val KEY_FAVORITES = "favorites"
 
     fun saved(ctx: Context): List<Place> {
         val raw = Store.prefs(ctx).getString(KEY_SAVED, null) ?: return emptyList()
@@ -70,6 +71,7 @@ object Places {
     fun remove(ctx: Context, id: String) {
         setSaved(ctx, saved(ctx).filterNot { it.id == id })
         Store.deleteForecast(ctx, id)
+        setFavorite(ctx, id, false)
     }
 
     fun useCurrent(ctx: Context): Boolean = Store.prefs(ctx).getBoolean(KEY_USE_CURRENT, true)
@@ -94,6 +96,19 @@ object Places {
         Store.deleteForecast(ctx, HOME_KEY)
     }
 
+    // --- favorites ---
+
+    fun favorites(ctx: Context): Set<String> =
+        Store.prefs(ctx).getStringSet(KEY_FAVORITES, null) ?: emptySet()
+
+    fun isFavorite(ctx: Context, id: String): Boolean = id in favorites(ctx)
+
+    fun setFavorite(ctx: Context, id: String, on: Boolean) {
+        val current = favorites(ctx).toMutableSet()
+        if (on) current.add(id) else current.remove(id)
+        Store.prefs(ctx).edit().putStringSet(KEY_FAVORITES, current).apply()
+    }
+
     /** Distance from [current] (or the last known current location) to home, if both are known. */
     fun kmFromHome(ctx: Context, current: Pair<Double, Double>? = Store.lastLatLon(ctx)): Float? {
         val home = home(ctx) ?: return null
@@ -112,14 +127,17 @@ object Places {
         return km > HOME_RADIUS_KM
     }
 
-    /** Everything to show, in order: current location (if on), home (while away), saved places. */
+    /** Everything to show, in order: current location (if on), home (while away), favorites, saved places. */
     fun all(ctx: Context): List<PlaceRef> {
         val out = ArrayList<PlaceRef>()
         if (useCurrent(ctx)) {
             out += PlaceRef(CURRENT_KEY, Store.currentPlaceName(ctx) ?: "Current location", true)
         }
         home(ctx)?.let { h -> if (homeVisible(ctx)) out += PlaceRef(HOME_KEY, h.name, false, isHome = true) }
-        saved(ctx).forEach { out += PlaceRef(it.id, it.name, false) }
+        val favIds = favorites(ctx)
+        val allSaved = saved(ctx)
+        allSaved.filter { it.id in favIds }.forEach { out += PlaceRef(it.id, it.name, false, isFavorite = true) }
+        allSaved.filter { it.id !in favIds }.forEach { out += PlaceRef(it.id, it.name, false) }
         return out
     }
 }

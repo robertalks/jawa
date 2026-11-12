@@ -136,7 +136,13 @@ class MainActivity : Activity() {
                 adapter.removeItem(place)
                 placesChanged(refetch = false)
             },
+            onFavorite = { place ->
+                Places.setFavorite(this, place.id, !Places.isFavorite(this, place.id))
+                adapter.refreshItem(place)
+                placesChanged(refetch = false)
+            },
             onStartDrag = { holder -> touchHelper.startDrag(holder) },
+            isFavorite = { place -> Places.isFavorite(this, place.id) },
         )
         touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0,

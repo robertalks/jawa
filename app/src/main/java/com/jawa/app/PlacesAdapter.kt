@@ -9,17 +9,20 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.util.Collections
 
-/** Saved places in Settings: drag ≡ to reorder, ✕ to remove. */
+/** Saved places in Settings: drag ≡ to reorder, ☆/★ to toggle favorite, ✕ to remove. */
 class PlacesAdapter(
     val items: MutableList<Place>,
     private val onRemove: (Place) -> Unit,
+    private val onFavorite: (Place) -> Unit,
     private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
+    private val isFavorite: (Place) -> Boolean,
 ) : RecyclerView.Adapter<PlacesAdapter.Holder>() {
 
     class Holder(view: View) : RecyclerView.ViewHolder(view) {
         val name: TextView = view.findViewById(R.id.name)
         val subtitle: TextView = view.findViewById(R.id.subtitle)
         val drag: View = view.findViewById(R.id.drag)
+        val favorite: TextView = view.findViewById(R.id.favorite)
         val remove: View = view.findViewById(R.id.remove)
     }
 
@@ -33,6 +36,13 @@ class PlacesAdapter(
         val p = items[position]
         holder.name.text = p.name
         holder.subtitle.text = p.subtitle
+        val fav = isFavorite(p)
+        holder.favorite.text = if (fav) "★" else "☆"
+        holder.favorite.alpha = if (fav) 1f else 0.4f
+        holder.favorite.setOnClickListener {
+            val pos = holder.bindingAdapterPosition
+            if (pos != RecyclerView.NO_POSITION) onFavorite(items[pos])
+        }
         holder.remove.setOnClickListener {
             val pos = holder.bindingAdapterPosition
             if (pos != RecyclerView.NO_POSITION) onRemove(items[pos])
@@ -59,5 +69,10 @@ class PlacesAdapter(
     fun addItem(place: Place) {
         items.add(place)
         notifyItemInserted(items.size - 1)
+    }
+
+    fun refreshItem(place: Place) {
+        val i = items.indexOfFirst { it.id == place.id }
+        if (i >= 0) notifyItemChanged(i)
     }
 }

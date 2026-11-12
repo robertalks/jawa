@@ -77,6 +77,7 @@ object CarPlace {
     fun label(p: PlaceRef): String = when {
         p.isCurrent -> "📍 ${p.name}"
         p.isHome -> "🏠 ${p.name}"
+        p.isFavorite -> "⭐ ${p.name}"
         else -> p.name
     }
 }
