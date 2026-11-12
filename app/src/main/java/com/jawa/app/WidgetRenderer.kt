@@ -119,6 +119,7 @@ object WidgetRenderer {
         val placeLabel = target.place?.let {
             when {
                 it.isHome -> "🏠 "
+                it.isFavorite -> "⭐ "
                 it.isCurrent && many -> "📍 "
                 else -> ""
             } + it.name

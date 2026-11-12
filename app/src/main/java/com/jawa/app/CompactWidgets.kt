@@ -51,7 +51,15 @@ abstract class CompactWidgetProvider(
 
         val v = RemoteViews(ctx.packageName, layout)
         v.setOnClickPendingIntent(R.id.widget_root, openDetails(ctx, id, place?.key))
-        v.setTextViewText(R.id.place, place?.name ?: ctx.getString(R.string.app_name))
+        val placeLabel = place?.let {
+            when {
+                it.isHome -> "🏠 "
+                it.isFavorite -> "⭐ "
+                it.isCurrent -> "📍 "
+                else -> ""
+            } + it.name
+        } ?: ctx.getString(R.string.app_name)
+        v.setTextViewText(R.id.place, placeLabel)
         if (fc == null) {
             v.setTextViewText(R.id.temp, if (snap.updating) "…" else "--°")
             if (showIcon) v.setImageViewResource(R.id.icon, R.drawable.wx_partly_day)
