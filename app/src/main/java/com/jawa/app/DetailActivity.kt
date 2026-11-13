@@ -168,8 +168,9 @@ class DetailActivity : Activity() {
 
         val placeLabel = when {
             place == null -> getString(R.string.app_name)
-            place.isHome -> "🏠 ${place.name}"
+            place.isCurrent && place.isHome -> "🏠 ${place.name}"
             place.isCurrent -> "📍 ${place.name}"
+            place.isHome -> "🏠 ${place.name}"
             else -> place.name
         }
         findViewById<TextView>(R.id.place_title).text = "←  $placeLabel"
@@ -385,11 +386,11 @@ class DetailActivity : Activity() {
         val km = Places.kmFromHome(this)
         when {
             place == null -> v.visibility = View.GONE
+            place.isCurrent && home != null && km != null && km <= Places.HOME_RADIUS_KM -> homeBadge(v, "🏠 Your home")
             place.isHome -> homeBadge(
                 v,
                 if (km != null && Places.useCurrent(this)) "🏠 Home · ${km.roundToInt()} km away" else "🏠 Home",
             )
-            place.isCurrent && home != null && km != null && km <= Places.HOME_RADIUS_KM -> homeBadge(v, "🏠 Your home")
             place.isCurrent && Store.lastLatLon(this) != null -> {
                 v.visibility = View.VISIBLE
                 v.text = "🏠 Set as home"

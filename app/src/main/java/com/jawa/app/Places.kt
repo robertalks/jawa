@@ -131,7 +131,8 @@ object Places {
     fun all(ctx: Context): List<PlaceRef> {
         val out = ArrayList<PlaceRef>()
         if (useCurrent(ctx)) {
-            out += PlaceRef(CURRENT_KEY, Store.currentPlaceName(ctx) ?: "Current location", true)
+            val atHome = home(ctx) != null && !homeVisible(ctx)
+            out += PlaceRef(CURRENT_KEY, Store.currentPlaceName(ctx) ?: "Current location", true, isHome = atHome)
         }
         home(ctx)?.let { h -> if (homeVisible(ctx)) out += PlaceRef(HOME_KEY, h.name, false, isHome = true) }
         val favIds = favorites(ctx)
