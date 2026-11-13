@@ -61,6 +61,7 @@ class WeatherWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ct
             current?.let { (lat, lon) ->
                 val name = resolvePlace(ctx, lat, lon)
                 Store.saveCurrentPlace(ctx, name, lat, lon)
+                Places.commitPendingFavoriteIfLeft(ctx, lat, lon)
             }
             Store.saveForecasts(ctx, keys.zip(jsons).toMap())
             // Air quality: extra, so a failure here never spoils the weather update

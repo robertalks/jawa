@@ -45,6 +45,7 @@ object Places {
     private const val KEY_USE_CURRENT = "use_current"
     private const val KEY_HOME = "home_place"
     private const val KEY_FAVORITES = "favorites"
+    private const val KEY_PENDING_FAV = "pending_favorite"
 
     fun saved(ctx: Context): List<Place> {
         val raw = Store.prefs(ctx).getString(KEY_SAVED, null) ?: return emptyList()
@@ -95,6 +96,42 @@ object Places {
         Store.prefs(ctx).edit().remove(KEY_HOME).apply()
         Store.deleteForecast(ctx, HOME_KEY)
     }
+
+    // --- pending favorite (current location marked while still there) ---
+
+    /** Returns the pending favorite location, if any. */
+    fun pendingFavorite(ctx: Context): Place? {
+        val raw = Store.prefs(ctx).getString(KEY_PENDING_FAV, null) ?: return null
+        return runCatching { Place.fromJson(JSONObject(raw)) }.getOrNull()
+    }
+
+    /** Records the current GPS location to be saved as a favorite once you leave. */
+    fun setPendingFavorite(ctx: Context, place: Place) {
+        Store.prefs(ctx).edit().putString(KEY_PENDING_FAV, place.toJson().toString()).apply()
+    }
+
+    fun clearPendingFavorite(ctx: Context) {
+        Store.prefs(ctx).edit().remove(KEY_PENDING_FAV).apply()
+    }
+
+    /**
+     * If there's a pending favorite and [newLat]/[newLon] is far enough away from it,
+     * commits it as a saved+favorited place. Returns the committed place or null.
+     */
+    fun commitPendingFavoriteIfLeft(ctx: Context, newLat: Double, newLon: Double): Place? {
+        val pending = pendingFavorite(ctx) ?: return null
+        val km = WeatherApi.distanceKm(pending.lat, pending.lon, newLat, newLon)
+        if (km < HOME_RADIUS_KM) return null
+        clearPendingFavorite(ctx)
+        if (add(ctx, pending)) {
+            setFavorite(ctx, pending.id, true)
+            return pending
+        }
+        return null
+    }
+
+    /** True if a pending favorite exists for the current location (prevents duplicate taps). */
+    fun hasPendingFavorite(ctx: Context): Boolean = pendingFavorite(ctx) != null
 
     // --- favorites ---
 

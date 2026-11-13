@@ -435,11 +435,13 @@ class DetailActivity : Activity() {
                 v.visibility = View.GONE
                 return
             }
+            val pending = Places.hasPendingFavorite(this)
             v.visibility = View.VISIBLE
-            v.text = "☆ Add to favorites"
-            v.setTextColor(Color.WHITE)
-            v.setBackgroundResource(R.drawable.home_button_bg)
-            v.setOnClickListener { addCurrentAsFavorite() }
+            v.text = if (pending) "★ Added to favorites" else "☆ Add to favorites"
+            v.setTextColor(if (pending) Color.rgb(0xFF, 0xD2, 0x7A) else Color.WHITE)
+            v.setBackgroundResource(if (pending) R.drawable.home_badge_bg else R.drawable.home_button_bg)
+            v.setOnClickListener { if (!pending) addCurrentAsFavorite() }
+            v.isClickable = !pending
             return
         }
         val fav = Places.isFavorite(this, place.key)
@@ -458,12 +460,8 @@ class DetailActivity : Activity() {
         val here = Store.lastLatLon(this) ?: return
         val name = Store.currentPlaceName(this) ?: "Current location"
         val place = Place("p${System.nanoTime()}", name, "", here.first, here.second)
-        if (!Places.add(this, place)) {
-            Toast.makeText(this, "Could not add — list may be full", Toast.LENGTH_SHORT).show()
-            return
-        }
-        Places.setFavorite(this, place.id, true)
-        Toast.makeText(this, "Added $name to favorites", Toast.LENGTH_SHORT).show()
+        Places.setPendingFavorite(this, place)
+        Toast.makeText(this, "Will be added to favorites when you leave", Toast.LENGTH_SHORT).show()
         render()
         WidgetUpdates.all(this)
     }
