@@ -166,7 +166,13 @@ class DetailActivity : Activity() {
             text = WidgetRenderer.dots(places.size, index)
         }
 
-        findViewById<TextView>(R.id.place_title).text = "←  ${place?.name ?: getString(R.string.app_name)}"
+        val placeLabel = when {
+            place == null -> getString(R.string.app_name)
+            place.isHome -> "🏠 ${place.name}"
+            place.isCurrent -> "📍 ${place.name}"
+            else -> place.name
+        }
+        findViewById<TextView>(R.id.place_title).text = "←  $placeLabel"
         findViewById<TextView>(R.id.updated).text = when {
             snap.updating -> "Updating…"
             snap.updatedMillis == 0L -> "Tap to update ⟳"
