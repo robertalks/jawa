@@ -423,11 +423,23 @@ class DetailActivity : Activity() {
         v.isClickable = false
     }
 
-    /** ⭐/☆ favorite toggle shown on saved places (not current location or home). */
+    /** ⭐/☆ favorite toggle shown on saved places and current location (not home). */
     private fun renderFavoriteAction(place: PlaceRef?) {
         val v = findViewById<TextView>(R.id.favorite_action)
-        if (place == null || place.isCurrent || place.isHome) {
+        if (place == null || place.isHome) {
             v.visibility = View.GONE
+            return
+        }
+        if (place.isCurrent) {
+            if (Store.lastLatLon(this) == null) {
+                v.visibility = View.GONE
+                return
+            }
+            v.visibility = View.VISIBLE
+            v.text = "☆ Add to favorites"
+            v.setTextColor(Color.WHITE)
+            v.setBackgroundResource(R.drawable.home_button_bg)
+            v.setOnClickListener { addCurrentAsFavorite() }
             return
         }
         val fav = Places.isFavorite(this, place.key)
@@ -440,6 +452,20 @@ class DetailActivity : Activity() {
             render()
             WidgetUpdates.all(this)
         }
+    }
+
+    private fun addCurrentAsFavorite() {
+        val here = Store.lastLatLon(this) ?: return
+        val name = Store.currentPlaceName(this) ?: "Current location"
+        val place = Place("p${System.nanoTime()}", name, "", here.first, here.second)
+        if (!Places.add(this, place)) {
+            Toast.makeText(this, "Could not add — list may be full", Toast.LENGTH_SHORT).show()
+            return
+        }
+        Places.setFavorite(this, place.id, true)
+        Toast.makeText(this, "Added $name to favorites", Toast.LENGTH_SHORT).show()
+        render()
+        WidgetUpdates.all(this)
     }
 
     /** Makes your current location home (asks first if it replaces another home). */
