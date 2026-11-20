@@ -435,13 +435,13 @@ class DetailActivity : Activity() {
                 v.visibility = View.GONE
                 return
             }
-            val pending = Places.hasPendingFavorite(this)
+            val alreadyFav = Places.currentLocationIsFavorite(this) || Places.hasPendingFavorite(this)
             v.visibility = View.VISIBLE
-            v.text = if (pending) "★ Added to favorites" else "☆ Add to favorites"
-            v.setTextColor(if (pending) Color.rgb(0xFF, 0xD2, 0x7A) else Color.WHITE)
-            v.setBackgroundResource(if (pending) R.drawable.home_badge_bg else R.drawable.home_button_bg)
-            v.setOnClickListener { if (!pending) addCurrentAsFavorite() }
-            v.isClickable = !pending
+            v.text = if (alreadyFav) "★ Added to favorites" else "☆ Add to favorites"
+            v.setTextColor(if (alreadyFav) Color.rgb(0xFF, 0xD2, 0x7A) else Color.WHITE)
+            v.setBackgroundResource(if (alreadyFav) R.drawable.home_badge_bg else R.drawable.home_button_bg)
+            v.setOnClickListener { if (!alreadyFav) addCurrentAsFavorite() }
+            v.isClickable = !alreadyFav
             return
         }
         val fav = Places.isFavorite(this, place.key)

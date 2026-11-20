@@ -133,6 +133,13 @@ object Places {
     /** True if a pending favorite exists for the current location (prevents duplicate taps). */
     fun hasPendingFavorite(ctx: Context): Boolean = pendingFavorite(ctx) != null
 
+    /** True if the current GPS location is already saved as a favorite place. */
+    fun currentLocationIsFavorite(ctx: Context): Boolean {
+        val (lat, lon) = Store.lastLatLon(ctx) ?: return false
+        val favIds = favorites(ctx)
+        return saved(ctx).any { it.id in favIds && WeatherApi.distanceKm(it.lat, it.lon, lat, lon) < HOME_RADIUS_KM }
+    }
+
     // --- favorites ---
 
     fun favorites(ctx: Context): Set<String> =
@@ -167,6 +174,7 @@ object Places {
     /** Everything to show, in order: current location (if on), home (while away), favorites, saved places. */
     fun all(ctx: Context): List<PlaceRef> {
         val out = ArrayList<PlaceRef>()
+        val currentLatLon = if (useCurrent(ctx)) Store.lastLatLon(ctx) else null
         if (useCurrent(ctx)) {
             val atHome = home(ctx) != null && !homeVisible(ctx)
             out += PlaceRef(CURRENT_KEY, Store.currentPlaceName(ctx) ?: "Current location", true, isHome = atHome)
@@ -174,8 +182,13 @@ object Places {
         home(ctx)?.let { h -> if (homeVisible(ctx)) out += PlaceRef(HOME_KEY, h.name, false, isHome = true) }
         val favIds = favorites(ctx)
         val allSaved = saved(ctx)
-        allSaved.filter { it.id in favIds }.forEach { out += PlaceRef(it.id, it.name, false, isFavorite = true) }
-        allSaved.filter { it.id !in favIds }.forEach { out += PlaceRef(it.id, it.name, false) }
+        // Hide saved places that overlap with the current GPS location to avoid duplicates.
+        val nearCurrent: (Place) -> Boolean = { p ->
+            currentLatLon != null &&
+                WeatherApi.distanceKm(p.lat, p.lon, currentLatLon.first, currentLatLon.second) < HOME_RADIUS_KM
+        }
+        allSaved.filter { it.id in favIds && !nearCurrent(it) }.forEach { out += PlaceRef(it.id, it.name, false, isFavorite = true) }
+        allSaved.filter { it.id !in favIds && !nearCurrent(it) }.forEach { out += PlaceRef(it.id, it.name, false) }
         return out
     }
 }
